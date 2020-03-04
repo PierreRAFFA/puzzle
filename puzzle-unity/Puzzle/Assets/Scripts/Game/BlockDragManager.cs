@@ -6,7 +6,8 @@ using UnityEngine;
 
 public class BlockDragManager: MonoBehaviour
 {
-    private List<GameObject> blocks = new List<GameObject>();
+    public BlockManager blockManager;
+    public BlockFusionManager blockFusionManager;
 
     private List<GameObject> sameRowBlocks;
     private GameObject draggingBlock;
@@ -15,15 +16,6 @@ public class BlockDragManager: MonoBehaviour
     void Start()
     {
         
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="b"></param>
-    public void RegisterBlock(GameObject b)
-    {
-        this.blocks.Add(b);
     }
 
     /// <summary>
@@ -60,15 +52,14 @@ public class BlockDragManager: MonoBehaviour
         //    this.blocks[iB].GetComponent<PhysicsBlock>().CanBeDisabled();
         //}
 
-        
+        List<List<GameObject>> groups = this.blockFusionManager.FindBlocksForUnion();
 
         //activate back the boxCollider
         //this.draggingBlock.GetComponent<BoxCollider2D>().enabled = true;
 
-        
 
-        //unregister the draggingBlock
-        //this.draggingBlock = null;
+
+
 
         Hashtable ht = new Hashtable();
         ht.Add("name", "dragging");
@@ -86,7 +77,6 @@ public class BlockDragManager: MonoBehaviour
 
     void OnInertiaUpdate()
     {
-        print(this.draggingBlockBoundaries[1]);
         if (this.draggingBlock.transform.localPosition.x < this.draggingBlockBoundaries[0] || this.draggingBlock.transform.localPosition.x > this.draggingBlockBoundaries[1])
         {
             float newX = Mathf.Min(this.draggingBlockBoundaries[1], this.draggingBlock.transform.localPosition.x);
@@ -103,13 +93,17 @@ public class BlockDragManager: MonoBehaviour
 
     void OnInertiaDone()
     {
-        print("OnInertiaDone");
         //Force the dragging block to be column-perfect
         int index = this.sameRowBlocks.IndexOf(this.draggingBlock);
         this.draggingBlock.GetComponent<Block>().SetColumIndex(index);
 
         this.draggingBlock.GetComponent<PhysicsBlock>().enablePhysics = true;
         StartCoroutine(WaitAndDraggingBlockPhysicsDisabled(this.draggingBlock));
+
+        //unregister the draggingBlock
+        this.draggingBlock = null;
+
+
     }
 
     private IEnumerator WaitAndDraggingBlockPhysicsDisabled(GameObject b)
@@ -132,8 +126,6 @@ public class BlockDragManager: MonoBehaviour
         float y = b.GetComponent<RectTransform>().position.y - b.GetComponent<Block>().GetRealHeight();
         float tolerance = b.GetComponent<Block>().GetRealHeight() / 10;
         List<GameObject> underRowBlocks = this.GetBlocksFromSameRowThan(y, tolerance);
-
-        print("underRowBlocks.Count:" + underRowBlocks.Count);
 
         if (underRowBlocks.Count > 0)
         {
@@ -164,7 +156,7 @@ public class BlockDragManager: MonoBehaviour
         
 
         float columWwidth = b.GetComponent<Block>().GetRealWidth();
-        print("LR: " + left + " " + right);
+        //print("LR: " + left + " " + right);
         return new float[] {
             (left + 1) * columWwidth,
             (right + 1) * columWwidth
@@ -179,7 +171,7 @@ public class BlockDragManager: MonoBehaviour
     private List<GameObject> GetBlocksFromSameRowThan(float positionY, float tolerance)
     {
         
-        List<GameObject> found = this.blocks
+        List<GameObject> found = this.blockManager.GetBlocks()
             .Where(item =>
                 item.GetComponent<RectTransform>().position.y >= positionY - tolerance
                 && item.GetComponent<RectTransform>().position.y <= positionY + tolerance )
@@ -213,7 +205,7 @@ public class BlockDragManager: MonoBehaviour
         {
             s += (result[iB] != null ? result[iB].GetComponent<Block>().color.ToString() : "___") + " ";
         }
-        print("Total Row is: " + s);
+        //print("Total Row is: " + s);
 
         return result;
     }
@@ -226,7 +218,7 @@ public class BlockDragManager: MonoBehaviour
     private void MoveBlockAtIndex(GameObject b, int index)
     {
         int currentBlockIndex = this.sameRowBlocks.IndexOf(b);
-        print(currentBlockIndex);
+        //print(currentBlockIndex);
         this.sameRowBlocks.RemoveAt(currentBlockIndex);
         this.sameRowBlocks.Insert(index, draggingBlock);
 
@@ -234,7 +226,6 @@ public class BlockDragManager: MonoBehaviour
         int endIndex = Mathf.Max(index, currentBlockIndex);
         for (int iB = startIndex; iB <= endIndex; iB++)
         {
-            
             Block block = this.sameRowBlocks[iB]?.GetComponent<Block>();
 
             //avoid dragging block
@@ -276,10 +267,10 @@ public class BlockDragManager: MonoBehaviour
     private IEnumerator DisablePhysicsForAllBlocks()
     {
         yield return new WaitForSeconds(1f);
-
-        for (int iB = 0; iB < this.blocks.Count; iB++)
+        List<GameObject> blocks = this.blockManager.GetBlocks();
+        for (int iB = 0; iB < blocks.Count; iB++)
         {
-            this.blocks[iB].GetComponent<PhysicsBlock>().CanBeDisabled();
+            blocks[iB].GetComponent<PhysicsBlock>().CanBeDisabled();
         }
     }
 
@@ -309,7 +300,7 @@ public class BlockDragManager: MonoBehaviour
     /// <returns></returns>
     private List<GameObject> GetBlocksOnTop(int columnIndex, float positionY)
     {
-        return this.blocks
+        return this.blockManager.GetBlocks()
             .Where(item => item.GetComponent<Block>().GetColumnIndex() == columnIndex && item.GetComponent<RectTransform>().position.y > positionY)
             .OrderBy(item => item.GetComponent<RectTransform>().position.y)
             .ToList<GameObject>();
@@ -324,15 +315,10 @@ public class BlockDragManager: MonoBehaviour
         {
             int draggingBlockColumnIndex = this.draggingBlock.GetComponent<Block>().GetColumnIndex();
 
-            
-
             if (this.sameRowBlocks[draggingBlockColumnIndex] != this.draggingBlock)
             {
-                print("something to do");
+                //print("something to do");
                 this.MoveBlockAtIndex(this.draggingBlock, draggingBlockColumnIndex);
-
-                ////force the recalculate `sameRowBlocks`
-                //this.sameRowBlocks = this.GetBlocksFromSameRowThan(this.draggingBlock);
             }
         }
     }

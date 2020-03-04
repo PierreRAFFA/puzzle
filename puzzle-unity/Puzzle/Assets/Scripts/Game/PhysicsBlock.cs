@@ -85,7 +85,7 @@ public class PhysicsBlock : MonoBehaviour
                 
             }
 
-            print(hitBufferList.Count + " COLLISION !!!");
+            //print(hitBufferList.Count + " COLLISION !!!");
 
             for (int i = 0; i < hitBufferList.Count; i++)
             {
@@ -130,7 +130,7 @@ public class PhysicsBlock : MonoBehaviour
                 this.enablePhysics = false;
                 this.canBeDisabled = false;
                 rb2d.position = new Vector2(rb2d.position.x, Mathf.RoundToInt(rb2d.position.y));
-                print("enablePhysics false");
+                //print("enablePhysics false");
             }
             previousDistance = distance;
         }

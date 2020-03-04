@@ -46,7 +46,6 @@ namespace DigitalRubyShared
                 {
                     if (result.gameObject.name.IndexOf("BlockDraggable", System.StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        print("BlockDraggable");
                         // we have a letter!
                         this.boundaries = this.blockDragManager.NotifyDraggingBlockStart(result.gameObject);
                         Vector2 dragPos = FingersUtility.ScreenToCanvasPoint(canvas, new Vector2(gesture.FocusX, gesture.FocusY));
@@ -77,19 +76,13 @@ namespace DigitalRubyShared
                     draggingLetter.transform.position = pos;
                 }
 
-                
+
             }
             else if (gesture.State == GestureRecognizerState.Ended)
             {
                 this.blockDragManager.NotifyDraggingBlockEnd(this.lastDelta);
 
-                GameObject gameObject = draggingLetter.gameObject;
-
-                print("GestureRecognizerState this.lastDelta:" + this.lastDelta);
-                print("GestureRecognizerState position.x:" + draggingLetter.transform.position.x);
-                print("GestureRecognizerState localPosition.x:" + draggingLetter.transform.localPosition.x);
-
-                
+                GameObject gameObject = draggingLetter.gameObject;                
 
                 draggingLetter = null;
             }

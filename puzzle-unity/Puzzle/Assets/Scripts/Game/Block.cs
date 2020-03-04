@@ -9,16 +9,12 @@ public class Block : MonoBehaviour
     public BlockColor color;
 
 
-    public delegate void BlockDragging();
-    public event BlockDragging OnBlockDragging;
-
-
-    private bool IsDragging = false;
+    protected string spritePath = "";
 
     // Start is called before the first frame update
-    void Start()
+    protected void Start()
     {
-        Sprite[] sprites = Resources.LoadAll<Sprite>("Sprites/block1x1");
+        Sprite[] sprites = Resources.LoadAll<Sprite>(spritePath);
         this.GetComponent<Image>().overrideSprite = sprites[(int) this.color];
 
     }
@@ -27,11 +23,6 @@ public class Block : MonoBehaviour
     void Update()
     {
         
-    }
-
-    public void SetDragging(bool value)
-    {
-        this.IsDragging = value;
     }
 
     public float GetRealHeight()
@@ -53,8 +44,6 @@ public class Block : MonoBehaviour
 
     public void SetColumIndex(int index)
     {
-        print("SetColumIndex");
-        print(index);
         float width = this.GetComponent<RectTransform>().rect.width * this.GetComponent<RectTransform>().localScale.x;
 
         Hashtable ht = new Hashtable();
@@ -73,20 +62,20 @@ public class Block : MonoBehaviour
         return Mathf.RoundToInt(this.GetComponent<RectTransform>().localPosition.y / width) - 1;
     }
 
-    public void SetRowIndex(int index)
-    {
-        print("SetRowIndex");
-        print(index);
-        float width = this.GetComponent<RectTransform>().rect.width * this.GetComponent<RectTransform>().localScale.x;
+    //public void SetRowIndex(int index)
+    //{
+    //    print("SetRowIndex");
+    //    print(index);
+    //    float width = this.GetComponent<RectTransform>().rect.width * this.GetComponent<RectTransform>().localScale.x;
 
-        Hashtable ht = new Hashtable();
-        ht.Add("y", (index + 1) * width);
-        ht.Add("time", 0.2f);
-        ht.Add("delay", 0.0f);
-        ht.Add("isLocal", true);
-        ht.Add("easetype", iTween.EaseType.easeInQuint);
-        iTween.MoveTo(this.gameObject, ht);
-    }
+    //    Hashtable ht = new Hashtable();
+    //    ht.Add("y", (index + 1) * width);
+    //    ht.Add("time", 0.2f);
+    //    ht.Add("delay", 0.0f);
+    //    ht.Add("isLocal", true);
+    //    ht.Add("easetype", iTween.EaseType.easeInQuint);
+    //    iTween.MoveTo(this.gameObject, ht);
+    //}
 }
 
 public enum BlockColor
