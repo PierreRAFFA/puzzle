@@ -129,7 +129,7 @@ public class BlockDragManager: MonoBehaviour
 
         if (underRowBlocks.Count > 0)
         {
-            int columnIndex = b.GetComponent<Block>().GetColumnIndex();
+            int columnIndex = b.GetComponent<Block>().GetColumnIndexes()[0];//TODO
 
             //left
 
@@ -187,7 +187,7 @@ public class BlockDragManager: MonoBehaviour
                 //print("GetBlocksFromSameRowThan Add Null1");
                 result.Add(null);
                 index++;
-            }else if (found[index].GetComponent<Block>().GetColumnIndex() == result.Count) // <= to keep draggingBlock when dragging
+            }else if (found[index].GetComponent<Block>().GetColumnIndexes()[0] == result.Count) // <= to keep draggingBlock when dragging
             {
                 //print("GetBlocksFromSameRowThan Element " + found[index].GetComponent<Block>().color);
                 result.Add(found[index]);
@@ -241,10 +241,10 @@ public class BlockDragManager: MonoBehaviour
 
                     if (blockAtTheBottom)
                     {
-                        print("blockAtTheBottom: " + blockAtTheBottom.GetComponent<Block>().GetColumnIndex() + " " + blockAtTheBottom.GetComponent<Block>().color);
+                        print("blockAtTheBottom: " + blockAtTheBottom.GetComponent<Block>().GetColumnIndexes()[0] + " " + blockAtTheBottom.GetComponent<Block>().color);
 
                         //Insert the falling block to the row (iB should be equal to blockAtTheBottom.GetComponent<Block>().GetColumnIndex()
-                        this.sameRowBlocks[blockAtTheBottom.GetComponent<Block>().GetColumnIndex()] = blockAtTheBottom;
+                        this.sameRowBlocks[blockAtTheBottom.GetComponent<Block>().GetColumnIndexes()[0]] = blockAtTheBottom;
 
                         string s = "";
                         for (int iB2 = 0; iB2 < this.sameRowBlocks.Count; iB2++)
@@ -301,7 +301,7 @@ public class BlockDragManager: MonoBehaviour
     private List<GameObject> GetBlocksOnTop(int columnIndex, float positionY)
     {
         return this.blockManager.GetBlocks()
-            .Where(item => item.GetComponent<Block>().GetColumnIndex() == columnIndex && item.GetComponent<RectTransform>().position.y > positionY)
+            .Where(item => item.GetComponent<Block>().GetColumnIndexes()[0] == columnIndex && item.GetComponent<RectTransform>().position.y > positionY)
             .OrderBy(item => item.GetComponent<RectTransform>().position.y)
             .ToList<GameObject>();
     }
@@ -313,7 +313,7 @@ public class BlockDragManager: MonoBehaviour
     {
         if (this.draggingBlock != null)
         {
-            int draggingBlockColumnIndex = this.draggingBlock.GetComponent<Block>().GetColumnIndex();
+            int draggingBlockColumnIndex = this.draggingBlock.GetComponent<Block>().GetColumnIndexes()[0];
 
             if (this.sameRowBlocks[draggingBlockColumnIndex] != this.draggingBlock)
             {

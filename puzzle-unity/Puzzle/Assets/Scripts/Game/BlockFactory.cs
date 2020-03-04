@@ -25,7 +25,7 @@ public class BlockFactory : MonoBehaviour
         return block;
     }
 
-    public static GameObject CreateBlock2x2(Transform container, float positionX, float positionY, float width, float height, bool draggable, BlockColor? color)
+    public static GameObject CreateBlock2x2(Transform container, float positionX, float positionY, float width, float height, Vector2 sizeUnits, bool draggable, BlockColor? color)
     {
         float factor = 1f; // 1.26f
 
@@ -36,6 +36,7 @@ public class BlockFactory : MonoBehaviour
         //apply position and size
         block.GetComponent<RectTransform>().sizeDelta = new Vector3(width * factor, height * factor);
         block.GetComponent<RectTransform>().anchoredPosition = new Vector3(positionX, positionY);
+        block.GetComponent<Block>().sizeUnits = sizeUnits;
 
         //apply color
         block.GetComponent<Block>().color = color ?? GetRandomColor();

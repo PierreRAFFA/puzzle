@@ -29,7 +29,7 @@ public class BlockManager : MonoBehaviour
 
     public GameObject CreateBlock(float positionX, float positionY, float widthUnits, float heightUnits, bool draggable, BlockColor? color)
     {
-        GameObject block = BlockFactory.CreateBlock2x2(this.container, positionX, positionY, widthUnits * this.blockSize, heightUnits * this.blockSize, draggable, color);
+        GameObject block = BlockFactory.CreateBlock2x2(this.container, positionX, positionY, widthUnits * this.blockSize, heightUnits * this.blockSize, new Vector2(widthUnits, heightUnits), draggable, color);
         this.RegisterBlock(block);
         return block;
     }
@@ -63,7 +63,8 @@ public class BlockManager : MonoBehaviour
         GameObject block = this.CreateBlock(maxX, minY, widthUnits, heightUnits, false, color);
 
         this.blocks.Add(block);
-        this.InvalidateRows();
+
+
     }
 
     public void CreateLine()
@@ -81,8 +82,18 @@ public class BlockManager : MonoBehaviour
     private void InvalidateRows()
     {
         this.rows = this.blocks
-            .OrderBy(item => item.transform.position.x)
-            .GroupBy(item => item.GetComponent<Block>().GetRowIndex())
+            // repeat block in different rows if spread in multiple yIndexes
+            .SelectMany(b => b.GetComponent<Block>().GetYIndexes().Select((yIndex, i) => new KeyValuePair<int, GameObject>(yIndex, b)))
+            .GroupBy(item => item.Key)
+            .OrderBy(grp => grp.Key)
+            .Select(grp => grp.Select(kv => kv.Value))
+            .Select(grp => {
+                return grp
+                    // repeat block in different columns if spread in multiple columnIndexes
+                    .SelectMany(b => b.GetComponent<Block>().GetColumnIndexes().Select((columnIndex, i) => new KeyValuePair<int, GameObject>(columnIndex, b)))
+                    .OrderBy(item => item.Key)
+                    .Select(kv => kv.Value);
+            })
             .Select(grp =>
             {
                 List<GameObject> grpList = grp.ToList();
@@ -96,7 +107,7 @@ public class BlockManager : MonoBehaviour
                         result.Add(null);
                         index++;
                     }
-                    else if (grpList[index].GetComponent<Block>().GetColumnIndex() == result.Count) // <= to keep draggingBlock when dragging
+                    else if (grpList[index].GetComponent<Block>().GetColumnIndexes().IndexOf(result.Count) >= 0) // <= to keep draggingBlock when dragging
                     {
                         //print("GetBlocksFromSameRowThan Element " + grpList[index].GetComponent<Block>().color);
                         result.Add(grpList[index]);
@@ -110,8 +121,45 @@ public class BlockManager : MonoBehaviour
                 }
                 return result;
             })
-            //.Select(grp => grp.ToList())
+            .Select(grp => grp.ToList())
             .ToList();
+
+
+            //.SelectMany(b => b.GetComponent<Block>().GetYIndexes().Select((yIndex, i) => new KeyValuePair<int, GameObject>(yIndex, b)))
+            //.GroupBy(item => item.Key)
+            //.OrderBy(item => item.transform.position.x)
+            //.GroupBy(item => item.GetComponent<Block>().GetYIndex())
+            //.Select(grp =>
+            //{
+            //    List<GameObject> grpList = grp.ToList();
+            //    List<GameObject> result = new List<GameObject>();
+            //    int index = 0;
+            //    while (result.Count < numColumns)
+            //    {
+            //        if (index >= grpList.Count)
+            //        {
+            //            //print("GetBlocksFromSameRowThan Add Null1");
+            //            result.Add(null);
+            //            index++;
+            //        }
+            //        else if (grpList[index].GetComponent<Block>().GetColumnIndex() == result.Count) // <= to keep draggingBlock when dragging
+            //        {
+            //            //print("GetBlocksFromSameRowThan Element " + grpList[index].GetComponent<Block>().color);
+            //            result.Add(grpList[index]);
+            //            index++;
+            //        }
+            //        else
+            //        {
+            //            //print("GetBlocksFromSameRowThan Add Null2");
+            //            result.Add(null);
+            //        }
+            //    }
+            //    return result;
+            //})
+            ////.Select(grp => grp.ToList())
+            //.ToList();
+
+        this.LogRows(this.rows);
     }
 
     public List<List<GameObject>> GetRows()
@@ -121,6 +169,30 @@ public class BlockManager : MonoBehaviour
     public List<GameObject> GetBlocks()
     {
         return this.blocks;
+    }
+
+    public void LogRows(List<List<GameObject>> rows)
+    {
+        string s = "";
+        for(var iR = rows.Count - 1; iR >= 0; iR--)
+        {
+            for (var iC = 0; iC < rows[iR].Count; iC++)
+            {
+                GameObject block = rows[iR][iC];
+                if (block != null)
+                {
+                    s += "" + block.GetComponent<Block>().GetColumnIndexes()[0] + "" + block.GetComponent<Block>().color.ToString().ToCharArray()[0];
+                }
+                else
+                {
+                    s += "nn";
+                }
+                s += " ";
+            }
+
+            s += "\n";
+        }
+        print(s);
     }
 
     // Update is called once per frame

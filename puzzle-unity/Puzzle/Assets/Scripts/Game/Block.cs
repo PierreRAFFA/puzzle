@@ -5,11 +5,16 @@ using UnityEngine.UI;
 
 public class Block : MonoBehaviour
 {
+    public static float BlockSize;
+
     [SerializeField]
     public BlockColor color;
 
+    public Vector2 sizeUnits;
+
 
     protected string spritePath = "";
+
 
     // Start is called before the first frame update
     protected void Start()
@@ -36,10 +41,15 @@ public class Block : MonoBehaviour
     }
     ////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
-    public int GetColumnIndex()
+    public List<int> GetColumnIndexes()
     {
-        float width = this.GetComponent<RectTransform>().rect.width * this.GetComponent<RectTransform>().localScale.x;
-        return Mathf.RoundToInt(this.GetComponent<RectTransform>().localPosition.x / width) - 1;
+        int baseIndex = Mathf.RoundToInt(this.GetComponent<RectTransform>().localPosition.x / BlockSize) - 1;
+        List<int> result = new List<int>();
+        for (var i = 0; i < this.sizeUnits.x; i++)
+        {
+            result.Insert(0, baseIndex - i);
+        }
+        return result;
     }
 
     public void SetColumIndex(int index)
@@ -56,10 +66,15 @@ public class Block : MonoBehaviour
     }
     ////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////
-    public int GetRowIndex()
+    public List<int> GetYIndexes()
     {
-        float width = this.GetComponent<RectTransform>().rect.width * this.GetComponent<RectTransform>().localScale.x;
-        return Mathf.RoundToInt(this.GetComponent<RectTransform>().localPosition.y / width) - 1;
+        int baseIndex = Mathf.RoundToInt(this.GetComponent<RectTransform>().localPosition.y / BlockSize) - 1;
+        List<int> result = new List<int>();
+        for (var i = 0; i < this.sizeUnits.y; i++)
+        {
+            result.Add(baseIndex + i);
+        }
+        return result;
     }
 
     //public void SetRowIndex(int index)

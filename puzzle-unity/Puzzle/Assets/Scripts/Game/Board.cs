@@ -16,6 +16,7 @@ public class Board : MonoBehaviour
 	{
         float columnWidth = this.GetComponent<RectTransform>().rect.width / 6f;
         print(columnWidth);
+        Block.BlockSize = columnWidth;
 
         Transform container = this.transform.Find("BlockContainer");
         //float factor = 1f; // 1.26f
