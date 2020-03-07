@@ -28,8 +28,6 @@ public class BlockPlayable : MonoBehaviour
     {
         rb2d = this.GetComponent<Rigidbody2D>();
         rb2d.bodyType = RigidbodyType2D.Static;
-
-        
     }
 
     private void Start()

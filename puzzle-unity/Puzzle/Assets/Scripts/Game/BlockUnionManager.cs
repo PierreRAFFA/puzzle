@@ -74,50 +74,76 @@ public class BlockUnionManager : MonoBehaviour
                         List<Vector2> groupRightBounds = this.GetBoundsFromGroup(groupRight, iR, iC);
                         List<Vector2> groupTopBounds = this.GetBoundsFromGroup(groupRight, iR, iC);
 
-                        if (this.IsGroupValid(flattenGroupRight, groupRightBounds) == false)
+                        bool isGroupRightValid = this.IsGroupValid(flattenGroupRight, groupRightBounds);
+                        bool isGroupTopValid = this.IsGroupValid(flattenGroupTop, groupTopBounds);
+
+                        
+                        //Is any of the groups valid ?
+                        if (isGroupRightValid || isGroupTopValid)
                         {
-                            flattenGroupRight = new List<GameObject>();
-                            print("VALID right: false");
+                            //if right not valid, just reset
+                            if (isGroupRightValid == false)
+                            {
+                                flattenGroupRight = new List<GameObject>();
+                                groupRight = new List<List<GameObject>>();
+                                print("VALID right: false");
+                            }
+                            else
+                            {
+                                print("VALID right: true");
+                            }
+
+                            //if top not valid, just reset
+                            if (isGroupTopValid == false)
+                            {
+                                flattenGroupTop = new List<GameObject>();
+                                groupTop = new List<List<GameObject>>();
+                                print("VALID top: false");
+                            }
+                            else
+                            {
+                                print("VALID top: true");
+                            }
+
+                            print(iR + " " + iC + " found");
+                            if (flattenGroupRight.Count >= flattenGroupTop.Count)
+                            {
+                                selectedGroup = flattenGroupRight;
+                                iC += groupRight[0].Count;
+                            }
+                            else
+                            {
+                                selectedGroup = flattenGroupTop;
+                                iC += groupTop[0].Count;
+                            }
+
+                            //check if the group found is already a group
+                            bool isAlreadyGroup = this.IsGroupAlreadyExist(selectedGroup);
+                            print("isAlreadyGroup: " + isAlreadyGroup);
+                            if (isAlreadyGroup == false)
+                            {
+                                print(iR + " " + iC + " " + selectedGroup[0].GetComponent<Block>().color);
+                                groups.Add(selectedGroup);
+                            }
+
+                            selectedBlocks.InsertRange(selectedBlocks.Count, selectedGroup);
+
                         }
                         else
                         {
-                            print("VALID right: true");
+                            //otherwise go to the new column
+                            iC++;
                         }
 
-                        if (this.IsGroupValid(flattenGroupTop, groupTopBounds) == false)
-                        {
-                            flattenGroupTop = new List<GameObject>();
-                            print("VALID top: false");
-                        }
-                        else
-                        {
-                            print("VALID top: true");
-                        }
+                        
+
+                        
 
 
-                        print(iR + " " + iC + " found");
-                        if (flattenGroupRight.Count >= flattenGroupTop.Count)
-                        {
-                            selectedGroup = flattenGroupRight;
-                            iC += groupRight[0].Count;
-                        }
-                        else
-                        {
-                            selectedGroup = flattenGroupTop;
-                            iC += groupTop[0].Count;
-                        }
+                        
 
 
-                        //check if the group found is already a group
-                        bool isAlreadyGroup = this.IsGroupAlreadyExist(selectedGroup);
-                        print("isAlreadyGroup: " + isAlreadyGroup);
-                        if (isAlreadyGroup == false)
-                        {
-                            print(iR + " " + iC + " " + selectedGroup[0].GetComponent<Block>().color);
-                            groups.Add(selectedGroup);
-                        }
-
-                        selectedBlocks.InsertRange(selectedBlocks.Count, selectedGroup);
+                       
                     }
                     else
                     {

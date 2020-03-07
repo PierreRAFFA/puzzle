@@ -35,6 +35,36 @@ public class BlockManager : MonoBehaviour
         return block;
     }
 
+    /// <summary>
+    /// Creates a new line at the very bottom of the board and add manually the new row to the list
+    /// </summary>
+    public void CreateNewLine()
+    {
+        float lastRowPositionY = this.rows[0][0].transform.localPosition.y;
+        print("lastRowPositionY:" + lastRowPositionY);
+        print("Block.BlockSize:" + Block.BlockSize);
+        print("BlockPlayable.Delta:" + BlockPlayable.Delta);
+        float newRowPositionY = lastRowPositionY - Block.BlockSize - BlockPlayable.Delta;
+        print("newRowPositionY:" + newRowPositionY);
+
+        List<GameObject> row = new List<GameObject>();
+        for (var iC = 0; iC < numColumns; iC++)
+        {
+            row.Add(this.CreateBlock(
+                Mathf.RoundToInt((iC + 1) * Block.BlockSize),
+                newRowPositionY,
+                1, 1,
+                true,
+                null));
+        }
+
+        this.rows.Insert(0, row);
+    }
+
+    /// <summary>
+    /// Unions blocks from the block list representing blocks whoich can be united.
+    /// </summary>
+    /// <param name="blocks"></param>
     public void UnionBlocks(List<GameObject> blocks)
     {
         print("UnionBlocks");
@@ -59,11 +89,6 @@ public class BlockManager : MonoBehaviour
 
         //Invalidate
         this.InvalidateRows();
-    }
-
-    public void CreateLine()
-    {
-
     }
 
 

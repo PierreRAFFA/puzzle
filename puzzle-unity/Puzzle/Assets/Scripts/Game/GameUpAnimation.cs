@@ -19,7 +19,7 @@ public class GameUpAnimation : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        BlockPlayable.Delta += 0.05f;
+        BlockPlayable.Delta += 0.1f;
     }
 
     void CheckNewLineVisible()
@@ -35,9 +35,14 @@ public class GameUpAnimation : MonoBehaviour
                 //this is a new line visible
                 //print("MODULO new line");
 
+                //check for unions
                 int index = this.blockManager.GetFirstRowVisibleIndex();
-                //print("MODULO new line " + index);
                 blockUnionManager.FindBlocksForUnionFromRowRange(index, index + 1);
+
+
+                //create a new line
+                this.blockManager.CreateNewLine();
+
             }
         }
 
