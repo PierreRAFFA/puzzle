@@ -25,7 +25,7 @@ public class BlocksUtil
                 }
                 else
                 {
-                    s += "____";
+                    s += "_____";
                 }
                 s += " ";
             }
@@ -48,7 +48,7 @@ public class BlocksUtil
             }
             else
             {
-                s += "____";
+                s += "_____";
             }
             s += " ";
         }

@@ -167,6 +167,8 @@ public class BlockDragManager: MonoBehaviour
         List<GameObject> underRowBlocks = this.GetBlocksFromRowBelow(b);
         List<GameObject> sameRowBlocks = this.GetBlocksFromSameRow(b);
 
+        print("CalculateBlockBoundaries:" + sameRowBlocks.Count);
+        print("CalculateBlockBoundaries:" + underRowBlocks.Count);
         if (underRowBlocks.Count > 0)
         {
             // take the first element as only 1x1 block are draggable

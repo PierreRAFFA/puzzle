@@ -55,7 +55,7 @@ public class BlockFactory : MonoBehaviour
     {
         //return BlockColor.Blue;
 
-        int rand = Random.Range(0, 4);
+        int rand = Random.Range(0, 3);
         switch (rand)
         {
             default:

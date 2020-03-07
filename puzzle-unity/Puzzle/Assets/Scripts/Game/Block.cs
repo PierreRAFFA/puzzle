@@ -7,6 +7,7 @@ using UnityEngine.UI;
 public class Block : MonoBehaviour
 {
     public static float BlockSize;
+    
 
     [SerializeField]
     public BlockColor color;
