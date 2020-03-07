@@ -18,16 +18,15 @@ public class Board : MonoBehaviour
         print(columnWidth);
         Block.BlockSize = columnWidth;
 
-        Transform container = this.transform.Find("BlockContainer");
         //float factor = 1f; // 1.26f
         for (int iC = 0; iC < 6; iC++)
         {
-            int numBlocks = Random.Range(13, 24);//Random.Range(13, 22);
+            int numBlocks = Random.Range(5, 12);//Random.Range(13, 22);
             for (int iB = 0; iB < numBlocks; iB++)
             {
                 this.blockManager.CreateBlock(
                     Mathf.RoundToInt((iC + 1) * columnWidth),
-                    Mathf.RoundToInt((iB - 12) * columnWidth),
+                    Mathf.RoundToInt((iB - 0) * columnWidth),
                     1, 1,
                     true,
                     null

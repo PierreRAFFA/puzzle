@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,9 +26,16 @@ public class Block : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    public void RefreshPositionX()
     {
-        
+        //last columIndex to get the index at bottomLeft of the block
+        int blockColumnIndex = this.GetColumnIndexes().Last();
+        float gap = Mathf.Abs(this.GetComponent<RectTransform>().localPosition.x - (blockColumnIndex + 1) * BlockSize);
+        print("gap:" + gap);
+        if (gap > 5)
+        {
+            SetColumIndex(blockColumnIndex);
+        }
     }
 
     public float GetRealHeight()
@@ -54,10 +62,10 @@ public class Block : MonoBehaviour
 
     public void SetColumIndex(int index)
     {
-        float width = this.GetComponent<RectTransform>().rect.width * this.GetComponent<RectTransform>().localScale.x;
+        print("SetColumIndex: " + index + " " + this.color);
 
         Hashtable ht = new Hashtable();
-        ht.Add("x", (index + 1) * width);
+        ht.Add("x", (index + 1) * BlockSize);
         ht.Add("time", 0.2f);
         ht.Add("delay", 0.0f);
         ht.Add("isLocal", true);
@@ -77,6 +85,11 @@ public class Block : MonoBehaviour
         return result;
     }
 
+
+    public bool Is1x1()
+    {
+        return this.GetColumnIndexes().Count == 1 && this.GetYIndexes().Count == 1;
+    }
     //public void SetRowIndex(int index)
     //{
     //    print("SetRowIndex");

@@ -6,11 +6,35 @@ using UnityEngine;
 
 public class PhysicsBlock : MonoBehaviour
 {
+    public delegate void PhysicsComplete(GameObject g);
+    public event PhysicsComplete OnPhysicsComplete;
+
     public float minGroundNormalY = .65f;
     public float gravityModifier = 60f;
     public float bounce = 1.3f;
 
-    public bool enablePhysics = false;
+    public bool _enablePhysics = false;
+    public bool enablePhysics
+    {
+        set
+        {
+            this._enablePhysics = value;
+            if (value)
+            {
+                this.positionOnCheckMotion = Vector2.zero;
+                InvokeRepeating("CheckMotion", 0, 0.5f);
+            }
+            else
+            {
+                if (this.OnPhysicsComplete != null)
+                {
+                    this.OnPhysicsComplete(this.gameObject);
+                }
+            }
+        }
+    }
+    private Vector2 positionOnCheckMotion = Vector2.zero;
+
     private bool canBeDisabled = false;
 
     protected bool grounded;
@@ -41,11 +65,11 @@ public class PhysicsBlock : MonoBehaviour
 
     /// <summary>
     /// Make Physics disabled waiting for equilibrium first
-    /// Nothing will be applied if enablePhysics was not enabled
+    /// Nothing will be applied if _enablePhysics was not enabled
     /// </summary>
     public void CanBeDisabled()
     {
-        if (this.enablePhysics)
+        if (this._enablePhysics)
         {
             this.canBeDisabled = true;
         }
@@ -53,7 +77,7 @@ public class PhysicsBlock : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (this.enablePhysics)
+        if (false && this._enablePhysics)
         {
             this.velocity += Physics2D.gravity * Time.deltaTime;
 
@@ -71,6 +95,7 @@ public class PhysicsBlock : MonoBehaviour
     {
         float distance = move.magnitude;
         //print("distance1: " + distance);
+        //print("minMoveDistance: " + minMoveDistance);
         if (distance > minMoveDistance)
         {
             int count = rb2d.Cast(move, contactFilter, hitBuffer, distance + shellRadius);
@@ -118,25 +143,57 @@ public class PhysicsBlock : MonoBehaviour
 
             //print("distance2: " + distance);
             //print("move.normalized: " + move.normalized);
-            //print(distance + " " + previousDistance);
+            //print("previousDistance: " + previousDistance);
 
             //if (distance > previousDistance)
             //{
             //    this.canBeDisabled = true;
             //}
 
-            if (distance < 0.001 && this.canBeDisabled)
-            {
-                this.enablePhysics = false;
-                this.canBeDisabled = false;
-                rb2d.position = new Vector2(rb2d.position.x, Mathf.RoundToInt(rb2d.position.y));
-                //print("enablePhysics false");
-            }
+            //if (distance < 0.01)
+            //{
+            //    this._enablePhysics = false;
+            //    this.canBeDisabled = false;
+            //    rb2d.position = new Vector2(rb2d.position.x, Mathf.RoundToInt(rb2d.position.y));
+            //    //print("_enablePhysics false");
+
+            //    if (this.OnPhysicsComplete != null)
+            //    {
+            //        this.OnPhysicsComplete();
+            //    }
+
+            //}
             previousDistance = distance;
         }
 
-
-
         rb2d.position = rb2d.position + move.normalized * distance;
+    }
+
+    void CheckMotion()
+    {
+        print("CheckMotion");
+        if (this.positionOnCheckMotion == Vector2.zero)
+        {
+            print("CheckMotion NEW");
+            this.positionOnCheckMotion = this.GetComponent<RectTransform>().localPosition;
+        }
+        else
+        {
+            print(this.positionOnCheckMotion);
+            print(this.GetComponent<RectTransform>().localPosition);
+            //if (this.positionOnCheckMotion.Equals(this.GetComponent<RectTransform>().localPosition))
+            if (Vector3Util.AreVectorEqual(this.positionOnCheckMotion, this.GetComponent<RectTransform>().localPosition, 10))
+            {
+                print("CheckMotion Cancel");
+                CancelInvoke();
+                this.enablePhysics = false;
+            }
+            else
+            {
+                this.positionOnCheckMotion = this.GetComponent<RectTransform>().localPosition;
+                print("CheckMotion Continue");
+            }
+        }
+
     }
 }

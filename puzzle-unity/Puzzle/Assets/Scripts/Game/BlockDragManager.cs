@@ -7,7 +7,7 @@ using UnityEngine;
 public class BlockDragManager: MonoBehaviour
 {
     public BlockManager blockManager;
-    public BlockFusionManager blockFusionManager;
+    public BlockUnionManager blockUnionManager;
 
     private List<GameObject> sameRowBlocks;
     private GameObject draggingBlock;
@@ -24,18 +24,17 @@ public class BlockDragManager: MonoBehaviour
     /// <param name="b"></param>
     public float[] NotifyDraggingBlockStart(GameObject b)
     {
-        print("NotifyDraggingBlockStart");
+        print("SetColumIndex NotifyDraggingBlockStart");
+
         //store the draggingBlock
         this.draggingBlock = b;
 
-        //temporarily deactivate the boxCollider
-        //this.draggingBlock.GetComponent<BoxCollider2D>().enabled = false;
+        // As a security
+        this.blockManager.InvalidateRows();
 
         //get All blocks from the same row for manipulation
-        this.sameRowBlocks = this.GetBlocksFromSameRowThan(b.GetComponent<RectTransform>().position.y, b.GetComponent<RectTransform>().rect.height / 10);
+        this.sameRowBlocks = this.GetBlocksFromSameRow(b);
         print(this.sameRowBlocks.Count);
-        
-        print("======");
 
         this.draggingBlockBoundaries = this.CalculateBlockBoundaries(b);
         return this.draggingBlockBoundaries;
@@ -46,95 +45,143 @@ public class BlockDragManager: MonoBehaviour
     /// </summary>
     public void NotifyDraggingBlockEnd(float delta)
     {
-        ////Physics can be disabled
-        //for (int iB = 0; iB < this.blocks.Count; iB++)
-        //{
-        //    this.blocks[iB].GetComponent<PhysicsBlock>().CanBeDisabled();
-        //}
+        print("delta:" + delta);
 
-        List<List<GameObject>> groups = this.blockFusionManager.FindBlocksForUnion();
+        this.RefreshBlockColumnIndexBasedOnPositionX(this.blockManager.GetRows());
 
-        //activate back the boxCollider
-        //this.draggingBlock.GetComponent<BoxCollider2D>().enabled = true;
-
-
-
-
-
-        Hashtable ht = new Hashtable();
-        ht.Add("name", "dragging");
-        ht.Add("x", this.draggingBlock.transform.position.x + (4 * delta));
-        ht.Add("time", Mathf.Abs(delta) / 40);
-        ht.Add("isLocal", false);
-        ht.Add("easetype", iTween.EaseType.easeOutQuint);
-        ht.Add("onupdate", "OnInertiaUpdate");
-        ht.Add("onupdatetarget", this.gameObject);
-        ht.Add("oncomplete", "OnInertiaDone");
-        ht.Add("oncompletetarget", this.gameObject);
-        iTween.MoveTo(this.draggingBlock.gameObject, ht);
-
-    }
-
-    void OnInertiaUpdate()
-    {
-        if (this.draggingBlock.transform.localPosition.x < this.draggingBlockBoundaries[0] || this.draggingBlock.transform.localPosition.x > this.draggingBlockBoundaries[1])
+        if (delta > 0)
         {
-            float newX = Mathf.Min(this.draggingBlockBoundaries[1], this.draggingBlock.transform.localPosition.x);
-            newX = Mathf.Max(this.draggingBlockBoundaries[0], newX);
+            Hashtable ht = new Hashtable();
+            ht.Add("name", "dragging");
+            ht.Add("x", this.draggingBlock.transform.position.x + (4 * delta));
+            ht.Add("time", Mathf.Abs(delta) / 40);
+            ht.Add("isLocal", false);
+            ht.Add("easetype", iTween.EaseType.easeOutQuint);
 
-            this.draggingBlock.transform.localPosition = new Vector2(
-                newX,
-                this.draggingBlock.transform.localPosition.y
-            );
-            iTween.StopByName("dragging");
-            OnInertiaDone();
+            Hashtable updateParams = new Hashtable();
+            updateParams.Add("block", this.draggingBlock);
+            updateParams.Add("blockBoundaries", this.draggingBlockBoundaries);
+            ht.Add("onupdate", "OnInertiaUpdate");
+            ht.Add("onupdatetarget", this.gameObject);
+            ht.Add("onupdateparams", updateParams);
+
+            ht.Add("oncomplete", "OnInertiaDone");
+            ht.Add("oncompletetarget", this.gameObject);
+            ht.Add("oncompleteparams", this.draggingBlock);
+
+            iTween.MoveTo(this.draggingBlock.gameObject, ht);
+        }
+        else
+        {
+            OnInertiaDone(this.draggingBlock);
         }
     }
 
-    void OnInertiaDone()
+    void OnInertiaUpdate(Hashtable updateParams)
     {
-        //Force the dragging block to be column-perfect
-        int index = this.sameRowBlocks.IndexOf(this.draggingBlock);
-        this.draggingBlock.GetComponent<Block>().SetColumIndex(index);
+        GameObject block = (GameObject)updateParams["block"];
+        float[] blockBoundaries = (float[])updateParams["blockBoundaries"];
+        if (block.transform.localPosition.x < blockBoundaries[0] || block.transform.localPosition.x > blockBoundaries[1])
+        {
+            float newX = Mathf.Min(blockBoundaries[1], block.transform.localPosition.x);
+            newX = Mathf.Max(blockBoundaries[0], newX);
 
-        this.draggingBlock.GetComponent<PhysicsBlock>().enablePhysics = true;
-        StartCoroutine(WaitAndDraggingBlockPhysicsDisabled(this.draggingBlock));
-
-        //unregister the draggingBlock
-        this.draggingBlock = null;
-
-
+            block.transform.localPosition = new Vector2(
+                newX,
+                block.transform.localPosition.y
+            );
+            iTween.StopByName("dragging");
+            OnInertiaDone(block);
+        }
     }
 
-    private IEnumerator WaitAndDraggingBlockPhysicsDisabled(GameObject b)
+    void OnInertiaDone(GameObject block)
     {
-        yield return new WaitForSeconds(0.5f);
+        //Force the dragging block to be column-perfect
+        int index = this.sameRowBlocks.IndexOf(block); // TODO can be critical as sameRowBlocks might have changed here
+        print("SetColumIndex OnInertiaDone: " + index);
+        block.GetComponent<Block>().SetColumIndex(index);
 
-        b.GetComponent<PhysicsBlock>().CanBeDisabled();
+        block.GetComponent<PhysicsBlock>().enablePhysics = true;
+        block.GetComponent<PhysicsBlock>().OnPhysicsComplete += onDraggingBlockPhysicsComplete;
+    }
+
+    private void onDraggingBlockPhysicsComplete(GameObject block)
+    {
+        block.GetComponent<PhysicsBlock>().OnPhysicsComplete -= onDraggingBlockPhysicsComplete;
+
+        //Force to InvalidateRows because a block could have been moved
+        this.blockManager.InvalidateRows();
+
+        //FindBlocksForUnion will InvalidateRows if some groups have been found
+        List<List<GameObject>> groups = this.blockUnionManager.FindBlocksForUnion();
+
+        //unregister the draggingBlock only if it was not reaffected by the player
+        if (this.draggingBlock == block)
+        {
+            print("UNREGISTER draggingBlock true");
+            this.draggingBlock = null;
+        }
+        else
+        {
+            print("UNREGISTER draggingBlock false");
+        }
+    }
+
+    /// <summary>
+    /// Refreshes columnIndex for each block based on positionX
+    /// </summary>
+    /// <param name="row"></param>
+    private void RefreshBlockColumnIndexBasedOnPositionX(List<List<GameObject>> rows)
+    {
+        for (int iR = 0; iR < rows.Count; iR++)
+        {
+            for (int iB = 0; iB < rows[iR].Count; iB++)
+            {
+                GameObject block = rows[iR][iB];
+                if (block != null && block != this.draggingBlock)
+                {
+                    if (block.GetComponent<Block>().Is1x1())
+                    {
+                        block.GetComponent<Block>().SetColumIndex(iB);
+                    }
+                    else
+                    {
+                        block.GetComponent<Block>().SetColumIndex(block.GetComponent<Block>().GetColumnIndexes().Last());
+                    }
+                   
+                }
+            }
+        }
     }
 
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
-    private float[] CalculateBlockBoundaries(GameObject b)
+    public float[] CalculateBlockBoundaries(GameObject b)
     {
         int left = 0;
         int right = 5;
 
-        //check Null block under the current row
-        float y = b.GetComponent<RectTransform>().position.y - b.GetComponent<Block>().GetRealHeight();
-        float tolerance = b.GetComponent<Block>().GetRealHeight() / 10;
-        List<GameObject> underRowBlocks = this.GetBlocksFromSameRowThan(y, tolerance);
+        List<GameObject> underRowBlocks = this.GetBlocksFromRowBelow(b);
+        List<GameObject> sameRowBlocks = this.GetBlocksFromSameRow(b);
 
         if (underRowBlocks.Count > 0)
         {
-            int columnIndex = b.GetComponent<Block>().GetColumnIndexes()[0];//TODO
+            // take the first element as only 1x1 block are draggable
+            // then GetColumnIndexes returns only one index
+            int columnIndex = b.GetComponent<Block>().GetColumnIndexes()[0];
 
             //left
-
             for (int iB = columnIndex; iB >= 0; iB--)
             {
+                if (sameRowBlocks[iB]?.GetComponent<Block>().Is1x1() == false)
+                {
+                    left = iB + 1;
+                    break;
+                }
+
                 if (underRowBlocks[iB] == null)
                 {
                     left = iB;
@@ -143,9 +190,14 @@ public class BlockDragManager: MonoBehaviour
             }
 
             //right
-
             for (int iB = columnIndex; iB < underRowBlocks.Count; iB++)
             {
+                if (sameRowBlocks[iB]?.GetComponent<Block>().Is1x1() == false)
+                {
+                    right = iB - 1;
+                    break;
+                }
+
                 if (underRowBlocks[iB] == null)
                 {
                     right = iB;
@@ -153,61 +205,36 @@ public class BlockDragManager: MonoBehaviour
                 }
             }
         }
-        
 
-        float columWwidth = b.GetComponent<Block>().GetRealWidth();
-        //print("LR: " + left + " " + right);
+        print("leftRightMax:" + left + " " + right);
         return new float[] {
-            (left + 1) * columWwidth,
-            (right + 1) * columWwidth
+            (left + 1) * Block.BlockSize,
+            (right + 1) * Block.BlockSize,
         };
     }
 
     /// <summary>
-    /// Returns all blocks from same row except the origin block `b`
+    /// Returns all blocks from same row
     /// </summary>
     /// <param name="b"></param>
     /// <returns></returns>
-    private List<GameObject> GetBlocksFromSameRowThan(float positionY, float tolerance)
+    private List<GameObject> GetBlocksFromSameRow(GameObject b)
     {
-        
-        List<GameObject> found = this.blockManager.GetBlocks()
-            .Where(item =>
-                item.GetComponent<RectTransform>().position.y >= positionY - tolerance
-                && item.GetComponent<RectTransform>().position.y <= positionY + tolerance )
-            .OrderBy(item => item.GetComponent<RectTransform>().position.x)
-            .ToList<GameObject>();
+        int index = this.blockManager.GetRows().FindIndex(row => row.IndexOf(b) >= 0);
 
-        List<GameObject> result = new List<GameObject>();
-        int index = 0;
-        while(result.Count < 6)
-        {
-            if (index >= found.Count)
-            {
-                //print("GetBlocksFromSameRowThan Add Null1");
-                result.Add(null);
-                index++;
-            }else if (found[index].GetComponent<Block>().GetColumnIndexes()[0] == result.Count) // <= to keep draggingBlock when dragging
-            {
-                //print("GetBlocksFromSameRowThan Element " + found[index].GetComponent<Block>().color);
-                result.Add(found[index]);
-                index++;
-            }
-            else
-            {
-                //print("GetBlocksFromSameRowThan Add Null2");
-                result.Add(null);
-            }
-        }
+        return this.blockManager.GetRows()[index];
+    }
 
-        string s = "";
-        for (int iB = 0; iB < result.Count; iB++)
-        {
-            s += (result[iB] != null ? result[iB].GetComponent<Block>().color.ToString() : "___") + " ";
-        }
-        //print("Total Row is: " + s);
-
-        return result;
+    /// <summary>
+    /// Returns all blocks from same row below
+    /// </summary>
+    /// <param name="b"></param>
+    /// <returns></returns>
+    private List<GameObject> GetBlocksFromRowBelow(GameObject b)
+    {
+        int index = this.blockManager.GetRows().FindIndex(row => row.IndexOf(b) >= 0);
+        print("BOUNDARIES: rowIndex" + index);
+        return this.blockManager.GetRows()[index - 1]; //Todo Careful here
     }
 
     /// <summary>
@@ -217,10 +244,14 @@ public class BlockDragManager: MonoBehaviour
     /// <param name="index"></param>
     private void MoveBlockAtIndex(GameObject b, int index)
     {
+        print("SetColumIndex MoveBlockAtIndex: " + b.GetComponent<Block>().color + " " + index);
+
         int currentBlockIndex = this.sameRowBlocks.IndexOf(b);
         //print(currentBlockIndex);
         this.sameRowBlocks.RemoveAt(currentBlockIndex);
         this.sameRowBlocks.Insert(index, draggingBlock);
+
+        print("SetColumIndex MoveBlockAtIndex after: " + BlocksUtil.LogList(this.sameRowBlocks));
 
         int startIndex = Mathf.Min(index, currentBlockIndex);
         int endIndex = Mathf.Max(index, currentBlockIndex);
@@ -237,7 +268,7 @@ public class BlockDragManager: MonoBehaviour
                 }
                 else
                 {
-                    GameObject blockAtTheBottom = this.MoveBlocksDown(iB, b.GetComponent<RectTransform>().position.y);
+                    GameObject blockAtTheBottom = this.EnablePhysicsForBlocksAtColumnIndex(iB, b.GetComponent<RectTransform>().position.y);
 
                     if (blockAtTheBottom)
                     {
@@ -252,9 +283,6 @@ public class BlockDragManager: MonoBehaviour
                             s += (this.sameRowBlocks[iB2] != null ? this.sameRowBlocks[iB2].GetComponent<Block>().color.ToString() : "___") + " ";
                         }
                         print("Big Total Row is: " + s);
-
-                        //Physics can be disabled
-                        StartCoroutine(this.DisablePhysicsForAllBlocks());
                     }
                     
                 }
@@ -264,25 +292,24 @@ public class BlockDragManager: MonoBehaviour
 
     }
 
-    private IEnumerator DisablePhysicsForAllBlocks()
-    {
-        yield return new WaitForSeconds(1f);
-        List<GameObject> blocks = this.blockManager.GetBlocks();
-        for (int iB = 0; iB < blocks.Count; iB++)
-        {
-            blocks[iB].GetComponent<PhysicsBlock>().CanBeDisabled();
-        }
-    }
-
     /// <summary>
     /// 
     /// </summary>
     /// <param name="columnIndex"></param>
     /// <param name="positionY"></param>
     /// <returns>Returns the block at the bottom</returns>
-    private GameObject MoveBlocksDown(int columnIndex, float positionY)
+    private GameObject EnablePhysicsForBlocksAtColumnIndex(int columnIndex, float positionY)
     {
         List<GameObject> blocks = this.GetBlocksOnTop(columnIndex, positionY);
+        print("EnablePhysicsForBlocksAtColumnIndex:" + BlocksUtil.LogList(blocks));
+
+        //get toppest block from the column and wait for the block to finish to fall down, then InvalidateBlock
+        //as some blocks might finish the motion after the draggingBlock finish its own one.
+        if (blocks.Count > 0)
+        {
+            blocks.Last().GetComponent<PhysicsBlock>().OnPhysicsComplete += OnTopBlockPhysicsComplete;
+        }
+
         for (int iB = 0; iB < blocks.Count; iB++)
         {
             blocks[iB].GetComponent<PhysicsBlock>().enablePhysics = true;
@@ -290,6 +317,17 @@ public class BlockDragManager: MonoBehaviour
 
         // can be null when moving block on the top row
         return blocks.Count > 0 ? blocks[0] : null;
+    }
+
+    void OnTopBlockPhysicsComplete(GameObject block)
+    {
+        block.GetComponent<PhysicsBlock>().OnPhysicsComplete -= OnTopBlockPhysicsComplete;
+
+        //Force to InvalidateRows because a block could have been moved
+        this.blockManager.InvalidateRows();
+
+        //FindBlocksForUnion will InvalidateRows if some groups have been found
+        this.blockUnionManager.FindBlocksForUnion();
     }
 
     /// <summary>
@@ -315,6 +353,7 @@ public class BlockDragManager: MonoBehaviour
         {
             int draggingBlockColumnIndex = this.draggingBlock.GetComponent<Block>().GetColumnIndexes()[0];
 
+            //print("SetColumIndex sameRowBlocks:" + BlocksUtil.LogList(this.sameRowBlocks));
             if (this.sameRowBlocks[draggingBlockColumnIndex] != this.draggingBlock)
             {
                 //print("something to do");

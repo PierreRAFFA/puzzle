@@ -46,8 +46,11 @@ namespace DigitalRubyShared
                 {
                     if (result.gameObject.name.IndexOf("BlockDraggable", System.StringComparison.OrdinalIgnoreCase) >= 0)
                     {
+                        print("DRAGGABLE FOUND BOUNDARIES");
                         // we have a letter!
                         this.boundaries = this.blockDragManager.NotifyDraggingBlockStart(result.gameObject);
+                        //print("BOUNDARIES:" + this.boundaries[0]);
+                        //print("BOUNDARIES:" + this.boundaries[1]);
                         Vector2 dragPos = FingersUtility.ScreenToCanvasPoint(canvas, new Vector2(gesture.FocusX, gesture.FocusY));
                         draggingLetter = result.gameObject.transform;
                         dragOffset = (Vector2)draggingLetter.position - dragPos;
@@ -61,12 +64,17 @@ namespace DigitalRubyShared
             }
             else if (gesture.State == GestureRecognizerState.Executing)
             {
+
+                this.boundaries = this.blockDragManager.CalculateBlockBoundaries(this.draggingLetter.gameObject);
+
+
                 Vector2 dragPos = FingersUtility.ScreenToCanvasPoint(canvas, new Vector2(gesture.FocusX, gesture.FocusY));
                 Vector3 pos = draggingLetter.transform.position;
 
                 // don't mess with the z
                 float newPosition = dragPos.x + dragOffset.x;
                 float containerX = this.container.GetComponent<RectTransform>().position.x;
+                
                 if (newPosition >= this.boundaries[0] + containerX && newPosition <= this.boundaries[1] + containerX)
                 {
                     this.lastDelta = newPosition - pos.x;
@@ -74,6 +82,12 @@ namespace DigitalRubyShared
                     //pos.y = dragPos.y + dragOffset.y;
                     
                     draggingLetter.transform.position = pos;
+                }
+                else
+                {
+                    //print("DRAGGABLE BOUNDARIES BLOCK");
+                    //print("BOUNDARIES:" + this.boundaries[0]);
+                    //print("BOUNDARIES:" + this.boundaries[1]);
                 }
 
 

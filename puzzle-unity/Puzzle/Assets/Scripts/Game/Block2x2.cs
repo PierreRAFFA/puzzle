@@ -12,10 +12,4 @@ public class Block2x2 : Block
         spritePath = "Sprites/block2x2";
         base.Start();
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
 }

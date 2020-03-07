@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -37,34 +38,27 @@ public class BlockManager : MonoBehaviour
     public void UnionBlocks(List<GameObject> blocks)
     {
         print("UnionBlocks");
+        print("blocks.Count:" + blocks.Count);
         BlockColor color = blocks[0].GetComponent<Block>().color;
 
-        float minX = Mathf.Infinity;
-        float minY = Mathf.Infinity;
-        float maxX = -Mathf.Infinity;
-        float maxY = -Mathf.Infinity;
+        //get Bounds
+        List<Vector2> bounds = BoundsUtil.GetBoundsFromGeometry(blocks);
+
+        //Destroy blocks
         for (var iB = 0; iB < blocks.Count; iB++)
         {
-            print("block found");
-            minX = Mathf.Min(minX, blocks[iB].GetComponent<RectTransform>().localPosition.x);
-            minY = Mathf.Min(minY, blocks[iB].GetComponent<RectTransform>().localPosition.y);
-
-            maxX = Mathf.Max(maxX, blocks[iB].GetComponent<RectTransform>().localPosition.x);
-            maxY = Mathf.Max(maxY, blocks[iB].GetComponent<RectTransform>().localPosition.y);
-
-
             this.blocks.Remove(blocks[iB]);
             Destroy(blocks[iB]);
         }
-        print(minX + " " + minY + " " + maxX + " " + maxY);
 
-        int widthUnits = Mathf.RoundToInt((maxX - minX + this.blockSize) / this.blockSize);
-        int heightUnits = Mathf.RoundToInt((maxY - minY + this.blockSize) / this.blockSize);
-        GameObject block = this.CreateBlock(maxX, minY, widthUnits, heightUnits, false, color);
+        //Create unioned Block
+        int widthUnits = Mathf.RoundToInt((bounds[1].x - bounds[0].x) / this.blockSize);
+        int heightUnits = Mathf.RoundToInt((bounds[1].y - bounds[0].y) / this.blockSize);
+        GameObject block = this.CreateBlock(bounds[1].x, bounds[0].y, widthUnits, heightUnits, false, color);
+        print("this.blocks.Count after Union:"  + this.blocks.Count);
 
-        this.blocks.Add(block);
-
-
+        //Invalidate
+        this.InvalidateRows();
     }
 
     public void CreateLine()
@@ -79,15 +73,19 @@ public class BlockManager : MonoBehaviour
         this.InvalidateRows();
     }
 
-    private void InvalidateRows()
+    public void InvalidateRows()
     {
+        print("=====InvalidateRows=====");
+        print("this.blocks.Count:" + this.blocks.Count);
+
         this.rows = this.blocks
             // repeat block in different rows if spread in multiple yIndexes
             .SelectMany(b => b.GetComponent<Block>().GetYIndexes().Select((yIndex, i) => new KeyValuePair<int, GameObject>(yIndex, b)))
             .GroupBy(item => item.Key)
             .OrderBy(grp => grp.Key)
             .Select(grp => grp.Select(kv => kv.Value))
-            .Select(grp => {
+            .Select(grp =>
+            {
                 return grp
                     // repeat block in different columns if spread in multiple columnIndexes
                     .SelectMany(b => b.GetComponent<Block>().GetColumnIndexes().Select((columnIndex, i) => new KeyValuePair<int, GameObject>(columnIndex, b)))
@@ -124,42 +122,7 @@ public class BlockManager : MonoBehaviour
             .Select(grp => grp.ToList())
             .ToList();
 
-
-            //.SelectMany(b => b.GetComponent<Block>().GetYIndexes().Select((yIndex, i) => new KeyValuePair<int, GameObject>(yIndex, b)))
-            //.GroupBy(item => item.Key)
-            //.OrderBy(item => item.transform.position.x)
-            //.GroupBy(item => item.GetComponent<Block>().GetYIndex())
-            //.Select(grp =>
-            //{
-            //    List<GameObject> grpList = grp.ToList();
-            //    List<GameObject> result = new List<GameObject>();
-            //    int index = 0;
-            //    while (result.Count < numColumns)
-            //    {
-            //        if (index >= grpList.Count)
-            //        {
-            //            //print("GetBlocksFromSameRowThan Add Null1");
-            //            result.Add(null);
-            //            index++;
-            //        }
-            //        else if (grpList[index].GetComponent<Block>().GetColumnIndex() == result.Count) // <= to keep draggingBlock when dragging
-            //        {
-            //            //print("GetBlocksFromSameRowThan Element " + grpList[index].GetComponent<Block>().color);
-            //            result.Add(grpList[index]);
-            //            index++;
-            //        }
-            //        else
-            //        {
-            //            //print("GetBlocksFromSameRowThan Add Null2");
-            //            result.Add(null);
-            //        }
-            //    }
-            //    return result;
-            //})
-            ////.Select(grp => grp.ToList())
-            //.ToList();
-
-        this.LogRows(this.rows);
+        BlocksUtil.LogRows(this.rows);
     }
 
     public List<List<GameObject>> GetRows()
@@ -171,29 +134,7 @@ public class BlockManager : MonoBehaviour
         return this.blocks;
     }
 
-    public void LogRows(List<List<GameObject>> rows)
-    {
-        string s = "";
-        for(var iR = rows.Count - 1; iR >= 0; iR--)
-        {
-            for (var iC = 0; iC < rows[iR].Count; iC++)
-            {
-                GameObject block = rows[iR][iC];
-                if (block != null)
-                {
-                    s += "" + block.GetComponent<Block>().GetColumnIndexes()[0] + "" + block.GetComponent<Block>().color.ToString().ToCharArray()[0];
-                }
-                else
-                {
-                    s += "nn";
-                }
-                s += " ";
-            }
-
-            s += "\n";
-        }
-        print(s);
-    }
+    public 
 
     // Update is called once per frame
     void Update()

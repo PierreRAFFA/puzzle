@@ -42,7 +42,7 @@ public class BlockFactory : MonoBehaviour
         block.GetComponent<Block>().color = color ?? GetRandomColor();
 
         //adjust boxCollider
-        int paddingX = 30;
+        int paddingX = 5;
         block.GetComponent<BoxCollider2D>().offset = new Vector2(-(width * factor) / 2, (height * factor) / 2);
         block.GetComponent<BoxCollider2D>().size = new Vector2(width * factor - paddingX, height * factor);
 
@@ -55,7 +55,7 @@ public class BlockFactory : MonoBehaviour
     {
         //return BlockColor.Blue;
 
-        int rand = Random.Range(0, 2);
+        int rand = Random.Range(0, 4);
         switch (rand)
         {
             default:
