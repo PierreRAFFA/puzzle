@@ -134,7 +134,10 @@ public class BlockManager : MonoBehaviour
         return this.blocks;
     }
 
-    public 
+    public int GetFirstRowVisibleIndex()
+    {
+        return this.rows.FindIndex(item => item.Count > 0 && item[0].GetComponent<BlockPlayable>().isVisible);
+    }
 
     // Update is called once per frame
     void Update()

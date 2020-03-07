@@ -801,9 +801,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1729877811}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 60f9bd0b443724105808a1bd2ebdd3e5, type: 3}
+  m_Script: {fileID: 11500000, guid: 5a3f310bafedc4eb1a6b2d64ed0509de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  blockUnionManager: {fileID: 1612563512}
+  blockManager: {fileID: 1810719780}
 --- !u!4 &1729877813
 Transform:
   m_ObjectHideFlags: 0

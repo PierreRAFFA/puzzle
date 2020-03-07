@@ -14,12 +14,12 @@ public class BlockPlayable : MonoBehaviour
 
     private float originalLocalY;
 
-    private bool _isActive = false;
-    public bool isActive
+    private bool _isVisible = false;
+    public bool isVisible
     {
         get
         {
-            return this._isActive;
+            return this._isVisible;
         }
     }
     
@@ -40,14 +40,14 @@ public class BlockPlayable : MonoBehaviour
 
     private void Update()
     {
-        if (this._isActive == false)
+        if (this._isVisible == false)
         {
             // global position
             float positionY = this.transform.position.y;
 
             if (positionY > 0)
             {
-                this._isActive = true;
+                this._isVisible = true;
                 rb2d.bodyType = RigidbodyType2D.Dynamic;
             }
             else

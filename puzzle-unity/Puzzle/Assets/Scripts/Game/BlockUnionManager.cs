@@ -17,90 +17,112 @@ public class BlockUnionManager : MonoBehaviour
 
     public List<List<GameObject>> FindBlocksForUnion()
     {
+        return this.DoFindBlocksForUnion(0, blockManager.GetRows().Count - 1);
+    }
+
+    public List<List<GameObject>> FindBlocksForUnionFromRowRange(int rowStart, int rowEnd)
+    {
+        return this.DoFindBlocksForUnion(rowStart, rowEnd);
+    }
+
+    private List<List<GameObject>> DoFindBlocksForUnion(int rowStart, int rowEnd)
+    {
         print("=============================FindBlocksForUnion");
         List <List<GameObject>> rows = blockManager.GetRows();
 
         List<List<GameObject>> groups = new List<List<GameObject>>();
         List<GameObject> selectedBlocks = new List<GameObject>();
-        var iR = 0;
+        var iR = rowStart;
         var iC = 0;
 
-        while (iR < rows.Count - 1 && iC < rows[0].Count)
+        while (iR < rowEnd && iC < rows[0].Count)
         {
             print("iR iC:" + iR + " " + iC);
-            if (selectedBlocks.IndexOf(rows[iR][iC]) == -1)
+
+            GameObject currentBlock = rows[iR][iC];
+            if (currentBlock != null)
             {
-                // union to the right and top
-                print("iR iC ok:" + iR + "," + iC);
-                List<List<GameObject>> groupRight = new List<List<GameObject>>();
-                groupRight = this.UnionWithRight(rows, new List<List<GameObject>>(), iR, iC, 2, selectedBlocks);
-                print("groupRight1");
-                BlocksUtil.LogRows(groupRight);
-                groupRight = this.UnionWithTop(rows, groupRight, iR + 2, iC, groupRight.Count > 0 ? groupRight[0].Count : 0, selectedBlocks);
-                print("groupRight2");
-                BlocksUtil.LogRows(groupRight);
-                List<GameObject> flattenGroupRight = groupRight.SelectMany(i => i).ToList<GameObject>();
-                
-                // union to the top and right
-                List<List<GameObject>> groupTop = new List<List<GameObject>>();
-                groupTop = this.UnionWithTop(rows, new List<List<GameObject>>(), iR, iC, 2, selectedBlocks);
-                print("groupTop1");
-                BlocksUtil.LogRows(groupTop);
-                groupTop = this.UnionWithRight(rows, groupTop, iR, iC + 2, groupTop.Count, selectedBlocks);
-                print("groupTop2");
-                BlocksUtil.LogRows(groupTop);
-                List<GameObject> flattenGroupTop = groupTop.SelectMany(i => i).ToList<GameObject>();
+                bool isBlockAlreadySelected = selectedBlocks.IndexOf(currentBlock) > 0;
+                bool isBlockVisible = currentBlock.GetComponent<BlockPlayable>().isVisible;
 
-                List<GameObject> selectedGroup;
-                if (flattenGroupRight.Count >= 4 || flattenGroupTop.Count >= 4)
+                if (isBlockAlreadySelected == false && isBlockVisible)
                 {
-                    List<Vector2> groupRightBounds = this.GetBoundsFromGroup(groupRight, iR, iC);
-                    List<Vector2> groupTopBounds = this.GetBoundsFromGroup(groupRight, iR, iC);
+                    // union to the right and top
+                    print("iR iC ok:" + iR + "," + iC);
+                    List<List<GameObject>> groupRight = new List<List<GameObject>>();
+                    groupRight = this.UnionWithRight(rows, new List<List<GameObject>>(), iR, iC, 2, selectedBlocks);
+                    print("groupRight1");
+                    BlocksUtil.LogRows(groupRight);
+                    groupRight = this.UnionWithTop(rows, groupRight, iR + 2, iC, groupRight.Count > 0 ? groupRight[0].Count : 0, selectedBlocks);
+                    print("groupRight2");
+                    BlocksUtil.LogRows(groupRight);
+                    List<GameObject> flattenGroupRight = groupRight.SelectMany(i => i).ToList<GameObject>();
 
-                    if (this.IsGroupValid(flattenGroupRight, groupRightBounds) == false)
+                    // union to the top and right
+                    List<List<GameObject>> groupTop = new List<List<GameObject>>();
+                    groupTop = this.UnionWithTop(rows, new List<List<GameObject>>(), iR, iC, 2, selectedBlocks);
+                    print("groupTop1");
+                    BlocksUtil.LogRows(groupTop);
+                    groupTop = this.UnionWithRight(rows, groupTop, iR, iC + 2, groupTop.Count, selectedBlocks);
+                    print("groupTop2");
+                    BlocksUtil.LogRows(groupTop);
+                    List<GameObject> flattenGroupTop = groupTop.SelectMany(i => i).ToList<GameObject>();
+
+                    List<GameObject> selectedGroup;
+                    if (flattenGroupRight.Count >= 4 || flattenGroupTop.Count >= 4)
                     {
-                        flattenGroupRight = new List<GameObject>();
-                        print("VALID right: false");
+                        List<Vector2> groupRightBounds = this.GetBoundsFromGroup(groupRight, iR, iC);
+                        List<Vector2> groupTopBounds = this.GetBoundsFromGroup(groupRight, iR, iC);
+
+                        if (this.IsGroupValid(flattenGroupRight, groupRightBounds) == false)
+                        {
+                            flattenGroupRight = new List<GameObject>();
+                            print("VALID right: false");
+                        }
+                        else
+                        {
+                            print("VALID right: true");
+                        }
+
+                        if (this.IsGroupValid(flattenGroupTop, groupTopBounds) == false)
+                        {
+                            flattenGroupTop = new List<GameObject>();
+                            print("VALID top: false");
+                        }
+                        else
+                        {
+                            print("VALID top: true");
+                        }
+
+
+                        print(iR + " " + iC + " found");
+                        if (flattenGroupRight.Count >= flattenGroupTop.Count)
+                        {
+                            selectedGroup = flattenGroupRight;
+                            iC += groupRight[0].Count;
+                        }
+                        else
+                        {
+                            selectedGroup = flattenGroupTop;
+                            iC += groupTop[0].Count;
+                        }
+
+
+                        //check if the group found is already a group
+                        bool isAlreadyGroup = this.IsGroupAlreadyExist(selectedGroup);
+                        print("isAlreadyGroup: " + isAlreadyGroup);
+                        if (isAlreadyGroup == false)
+                        {
+                            print(iR + " " + iC + " " + selectedGroup[0].GetComponent<Block>().color);
+                            groups.Add(selectedGroup);
+                        }
+
+                        selectedBlocks.InsertRange(selectedBlocks.Count, selectedGroup);
                     }
                     else
                     {
-                        print("VALID right: true");
+                        iC++;
                     }
-
-                    if (this.IsGroupValid(flattenGroupTop, groupTopBounds) == false)
-                    {
-                        flattenGroupTop = new List<GameObject>();
-                        print("VALID top: false");
-                    }
-                    else
-                    {
-                        print("VALID top: true");
-                    }
-
-
-                    print(iR + " " + iC + " found");
-                    if (flattenGroupRight.Count >= flattenGroupTop.Count)
-                    {
-                        selectedGroup = flattenGroupRight;
-                        iC += groupRight[0].Count;
-                    }
-                    else
-                    {
-                        selectedGroup = flattenGroupTop;
-                        iC += groupTop[0].Count;
-                    }
-
-
-                    //check if the group found is already a group
-                    bool isAlreadyGroup = this.IsGroupAlreadyExist(selectedGroup);
-                    print("isAlreadyGroup: " + isAlreadyGroup);
-                    if (isAlreadyGroup == false)
-                    {
-                        print(iR + " " + iC + " " + selectedGroup[0].GetComponent<Block>().color);
-                        groups.Add(selectedGroup);
-                    }
-
-                    selectedBlocks.InsertRange(selectedBlocks.Count, selectedGroup);
                 }
                 else
                 {
@@ -109,9 +131,9 @@ public class BlockUnionManager : MonoBehaviour
             }
             else
             {
-                //print("already selected");
                 iC++;
             }
+            
         
             //boundaries
             if (iC > rows[0].Count - 2)
@@ -293,6 +315,6 @@ public class BlockUnionManager : MonoBehaviour
     {
         List<Vector2> boundsFromGeometry = BoundsUtil.GetBoundsFromGeometry(blocks);
 
-        return BoundsUtil.AreBoundsEqual(boundsFromGeometry, blockBounds, 10);
+        return BoundsUtil.AreBoundsSizeEqual(boundsFromGeometry, blockBounds, 10);
     }
 }
