@@ -85,7 +85,7 @@ public class BoundsUtil
     /// <param name="bounds2"></param>
     /// <param name="tolerance"></param>
     /// <returns></returns>
-    public static bool AreBoundsSizeEqual(List<Vector2> bounds1, List<Vector2> bounds2, int tolerance)
+    public static bool AreBoundsSizeEqual(List<Vector2> bounds1, List<Vector2> bounds2, float tolerance)
     {
         float width1 = bounds1[1].x - bounds1[0].x;
         float height1 = bounds1[1].y - bounds1[0].y;
@@ -93,12 +93,12 @@ public class BoundsUtil
         float width2 = bounds2[1].x - bounds2[0].x;
         float height2 = bounds2[1].y - bounds2[0].y;
 
-        //Debug.Log("AreBoundsEqual width1:" + width1);
-        //Debug.Log("AreBoundsEqual height1:" + height1);
-        //Debug.Log("AreBoundsEqual width2:" + width2);
-        //Debug.Log("AreBoundsEqual height2:" + height2);
+        Debug.Log("AreBoundsEqual width1:" + width1);
+        Debug.Log("AreBoundsEqual height1:" + height1);
+        Debug.Log("AreBoundsEqual width2:" + width2);
+        Debug.Log("AreBoundsEqual height2:" + height2);
 
-        return (width1 - width2 <= tolerance && width1 - width2 <= tolerance);
+        return (Mathf.Abs(width1 - width2) <= tolerance && Mathf.Abs(height1 - height2) <= tolerance);
 
         //return ((Mathf.Abs(bounds1[0].x - bounds2[0].x) <= tolerance)
         //    && (Mathf.Abs(bounds1[0].y - bounds2[0].y) <= tolerance)

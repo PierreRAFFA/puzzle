@@ -194,7 +194,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: -2.3080254, y: -1274.699}
+  m_Offset: {x: -0.6725197, y: -1274.699}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -205,7 +205,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 129.61551, y: 2550.398}
+  m_Size: {x: 132.88654, y: 2550.398}
   m_EdgeRadius: 0
 --- !u!114 &113442074
 MonoBehaviour:
@@ -566,7 +566,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 1.0249023, y: -1274.6991}
+  m_Offset: {x: -2.1384888, y: -1274.6991}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -577,7 +577,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 123.17859, y: 2550.3982}
+  m_Size: {x: 129.50537, y: 2550.3982}
   m_EdgeRadius: 0
 --- !u!114 &723636797
 MonoBehaviour:
@@ -786,7 +786,7 @@ GameObject:
   - component: {fileID: 1729877813}
   - component: {fileID: 1729877812}
   m_Layer: 0
-  m_Name: Game
+  m_Name: GameAnimation
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -801,7 +801,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1729877811}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5a3f310bafedc4eb1a6b2d64ed0509de, type: 3}
+  m_Script: {fileID: 11500000, guid: 3d42c55a1d173467995fe2f010b01bfe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   blockUnionManager: {fileID: 1612563512}

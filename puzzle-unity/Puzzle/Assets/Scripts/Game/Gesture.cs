@@ -44,8 +44,10 @@ namespace DigitalRubyShared
                 EventSystem.current.RaycastAll(p, raycast);
                 foreach (RaycastResult result in raycast)
                 {
-                    if (result.gameObject.name.IndexOf("BlockDraggable", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (this.blockDragManager.canDrag && result.gameObject.name.IndexOf("BlockDraggable", System.StringComparison.OrdinalIgnoreCase) >= 0)
                     {
+                        
+
                         print("DRAGGABLE FOUND BOUNDARIES");
                         // we have a letter!
                         this.boundaries = this.blockDragManager.NotifyDraggingBlockStart(result.gameObject);
@@ -94,9 +96,9 @@ namespace DigitalRubyShared
             }
             else if (gesture.State == GestureRecognizerState.Ended)
             {
-                this.blockDragManager.NotifyDraggingBlockEnd(this.lastDelta);
+                this.blockDragManager.NotifyDraggingBlockEnd(draggingLetter.gameObject, this.lastDelta);
 
-                GameObject gameObject = draggingLetter.gameObject;                
+                GameObject gameObject = draggingLetter.gameObject;
 
                 draggingLetter = null;
             }

@@ -7,7 +7,6 @@ using UnityEngine.UI;
 public class Block : MonoBehaviour
 {
     public static float BlockSize;
-    
 
     [SerializeField]
     public BlockColor color;
@@ -70,7 +69,8 @@ public class Block : MonoBehaviour
         ht.Add("time", 0.2f);
         ht.Add("delay", 0.0f);
         ht.Add("isLocal", true);
-        ht.Add("easetype", iTween.EaseType.easeInQuint);
+        //ht.Add("onupdate", "OnInertiaUpdate");
+        ht.Add("easetype", iTween.EaseType.easeOutQuint);
         iTween.MoveTo(this.gameObject, ht);
     }
     ////////////////////////////////////////////////////////////////////////////////////

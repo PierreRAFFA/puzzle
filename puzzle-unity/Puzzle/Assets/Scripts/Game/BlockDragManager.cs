@@ -13,6 +13,10 @@ public class BlockDragManager: MonoBehaviour
     private GameObject draggingBlock;
     private float[] draggingBlockBoundaries;
 
+    private int siblingIndex = 100;
+
+    public bool canDrag = true;
+
     void Start()
     {
         
@@ -24,13 +28,17 @@ public class BlockDragManager: MonoBehaviour
     /// <param name="b"></param>
     public float[] NotifyDraggingBlockStart(GameObject b)
     {
+        this.canDrag = false;
         print("SetColumIndex NotifyDraggingBlockStart");
 
         //store the draggingBlock
         this.draggingBlock = b;
 
         // As a security
-        this.blockManager.InvalidateRows();
+        //this.blockManager.InvalidateRows();
+
+        //Move draggingBlock foreward
+        b.transform.SetSiblingIndex(++this.siblingIndex);
 
         //get All blocks from the same row for manipulation
         this.sameRowBlocks = this.GetBlocksFromSameRow(b);
@@ -43,23 +51,23 @@ public class BlockDragManager: MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    public void NotifyDraggingBlockEnd(float delta)
+    public void NotifyDraggingBlockEnd(GameObject block, float delta)
     {
         print("delta:" + delta);
 
-        this.RefreshBlockColumnIndexBasedOnPositionX(this.blockManager.GetRows());
+        //this.RefreshBlockColumnIndexBasedOnPositionX(this.blockManager.GetRows());
 
         if (delta > 0)
         {
             Hashtable ht = new Hashtable();
-            ht.Add("name", "dragging");
-            ht.Add("x", this.draggingBlock.transform.position.x + (4 * delta));
+            ht.Add("name", "dragging" + block.GetInstanceID());
+            ht.Add("x", block.transform.localPosition.x + (4 * delta));
             ht.Add("time", Mathf.Abs(delta) / 40);
-            ht.Add("isLocal", false);
+            ht.Add("isLocal", true);
             ht.Add("easetype", iTween.EaseType.easeOutQuint);
 
             Hashtable updateParams = new Hashtable();
-            updateParams.Add("block", this.draggingBlock);
+            updateParams.Add("block", block);
             updateParams.Add("blockBoundaries", this.draggingBlockBoundaries);
             ht.Add("onupdate", "OnInertiaUpdate");
             ht.Add("onupdatetarget", this.gameObject);
@@ -67,55 +75,91 @@ public class BlockDragManager: MonoBehaviour
 
             ht.Add("oncomplete", "OnInertiaDone");
             ht.Add("oncompletetarget", this.gameObject);
-            ht.Add("oncompleteparams", this.draggingBlock);
+            ht.Add("oncompleteparams", block);
 
-            iTween.MoveTo(this.draggingBlock.gameObject, ht);
+            iTween.MoveTo(block, ht);
         }
         else
         {
-            OnInertiaDone(this.draggingBlock);
+            OnInertiaDone(block);
         }
     }
 
     void OnInertiaUpdate(Hashtable updateParams)
     {
         GameObject block = (GameObject)updateParams["block"];
-        float[] blockBoundaries = (float[])updateParams["blockBoundaries"];
-        if (block.transform.localPosition.x < blockBoundaries[0] || block.transform.localPosition.x > blockBoundaries[1])
-        {
-            float newX = Mathf.Min(blockBoundaries[1], block.transform.localPosition.x);
-            newX = Mathf.Max(blockBoundaries[0], newX);
 
-            block.transform.localPosition = new Vector2(
-                newX,
-                block.transform.localPosition.y
-            );
-            iTween.StopByName("dragging");
-            OnInertiaDone(block);
+        if (block.IsDestroyed() == false)
+        {
+            //iTween seems to store the original positionY and then we need to update the positionY made by GameAnimation
+            block.GetComponent<BlockPlayable>().MoveUp();
+
+            float[] blockBoundaries = (float[])updateParams["blockBoundaries"];
+            if (block.transform.localPosition.x < blockBoundaries[0] || block.transform.localPosition.x > blockBoundaries[1])
+            {
+                float newX = Mathf.Min(blockBoundaries[1], block.transform.localPosition.x);
+                newX = Mathf.Max(blockBoundaries[0], newX);
+
+                
+                block.transform.localPosition = new Vector2(
+                    newX,
+                    block.transform.localPosition.y
+                );
+
+                iTween.StopByName("dragging" + block.GetInstanceID());
+                OnInertiaDone(block);
+            }
         }
+        else
+        {
+            this.onDraggingBlockPhysicsComplete(null);
+        }
+        
     }
 
     void OnInertiaDone(GameObject block)
     {
-        //Force the dragging block to be column-perfect
-        int index = this.sameRowBlocks.IndexOf(block); // TODO can be critical as sameRowBlocks might have changed here
-        print("SetColumIndex OnInertiaDone: " + index);
-        block.GetComponent<Block>().SetColumIndex(index);
+        //block can be null if there is some fast dragging from the user
+        if (block.IsDestroyed() == false)
+        {
+            //Force the dragging block to be column-perfect
+            this.sameRowBlocks = GetBlocksFromSameRow(block);
+            int index = this.sameRowBlocks.IndexOf(block);
 
-        block.GetComponent<PhysicsBlock>().enablePhysics = true;
-        block.GetComponent<PhysicsBlock>().OnPhysicsComplete += onDraggingBlockPhysicsComplete;
+            print("SetColumIndex OnInertiaDone: " + index);
+            block.GetComponent<Block>().SetColumIndex(index);
+
+            print("Wait for onDraggingBlockPhysicsComplete... " + block.GetInstanceID());
+            print("Wait for onDraggingBlockPhysicsComplete... " + block.GetComponent<PhysicsBlock>().GetInstanceID());
+            block.GetComponent<PhysicsBlock>().OnPhysicsComplete += onDraggingBlockPhysicsComplete;
+            block.GetComponent<PhysicsBlock>().enablePhysics = true;
+            
+        }
+        else
+        {
+            this.canDrag = true;
+        }
+        
     }
 
     private void onDraggingBlockPhysicsComplete(GameObject block)
     {
-        block.GetComponent<PhysicsBlock>().OnPhysicsComplete -= onDraggingBlockPhysicsComplete;
+        print("Wait for onDraggingBlockPhysicsComplete OK " + block.GetComponent<PhysicsBlock>().GetInstanceID());
 
-        //Force to InvalidateRows because a block could have been moved
+        if (block != null)
+        {
+            block.GetComponent<PhysicsBlock>().OnPhysicsComplete -= onDraggingBlockPhysicsComplete;
+        }
+
+
+        //this.RefreshBlockPositionX(this.blockManager.GetRows());
         this.blockManager.InvalidateRows();
+        this.canDrag = true;
 
         //FindBlocksForUnion will InvalidateRows if some groups have been found
         List<List<GameObject>> groups = this.blockUnionManager.FindBlocksForUnion();
 
+        
         //unregister the draggingBlock only if it was not reaffected by the player
         if (this.draggingBlock == block)
         {
@@ -132,14 +176,14 @@ public class BlockDragManager: MonoBehaviour
     /// Refreshes columnIndex for each block based on positionX
     /// </summary>
     /// <param name="row"></param>
-    private void RefreshBlockColumnIndexBasedOnPositionX(List<List<GameObject>> rows)
+    private void RefreshBlockPositionX(List<List<GameObject>> rows)
     {
         for (int iR = 0; iR < rows.Count; iR++)
         {
             for (int iB = 0; iB < rows[iR].Count; iB++)
             {
                 GameObject block = rows[iR][iB];
-                if (block != null && block != this.draggingBlock)
+                if (block != null)// && block != this.draggingBlock)
                 {
                     if (block.GetComponent<Block>().Is1x1())
                     {
@@ -153,6 +197,17 @@ public class BlockDragManager: MonoBehaviour
                 }
             }
         }
+
+        //Force to InvalidateRows because a block could have been moved
+        StartCoroutine(WaitAndInvalidateRows());
+
+        this.canDrag = true;
+    }
+
+    IEnumerator WaitAndInvalidateRows()
+    {
+        yield return new WaitForSeconds(0.3f);
+        this.blockManager.InvalidateRows();
     }
 
     /// <summary>
@@ -161,6 +216,10 @@ public class BlockDragManager: MonoBehaviour
     /// <returns></returns>
     public float[] CalculateBlockBoundaries(GameObject b)
     {
+        if (canDrag)
+        {
+
+        }
         int left = 0;
         int right = 5;
 
@@ -236,6 +295,13 @@ public class BlockDragManager: MonoBehaviour
     {
         int index = this.blockManager.GetRows().FindIndex(row => row.IndexOf(b) >= 0);
         print("BOUNDARIES: rowIndex" + index);
+        if (index == -1)
+        {
+            print("BOUNDARIES: error");
+            print(b.GetComponent<Block>().GetColumnIndexes());
+            print(b.GetComponent<Block>().GetYIndexes());
+            BlocksUtil.LogRows(this.blockManager.GetRows());
+        }
         return this.blockManager.GetRows()[index - 1]; //Todo Careful here
     }
 
@@ -249,7 +315,7 @@ public class BlockDragManager: MonoBehaviour
         print("SetColumIndex MoveBlockAtIndex: " + b.GetComponent<Block>().color + " " + index);
 
         int currentBlockIndex = this.sameRowBlocks.IndexOf(b);
-        //print(currentBlockIndex);
+        print(currentBlockIndex);
         this.sameRowBlocks.RemoveAt(currentBlockIndex);
         this.sameRowBlocks.Insert(index, draggingBlock);
 
@@ -270,22 +336,22 @@ public class BlockDragManager: MonoBehaviour
                 }
                 else
                 {
-                    GameObject blockAtTheBottom = this.EnablePhysicsForBlocksAtColumnIndex(iB, b.GetComponent<RectTransform>().position.y);
+                    //GameObject blockAtTheBottom = this.EnablePhysicsForBlocksAtColumnIndex(iB, b.GetComponent<RectTransform>().position.y);
 
-                    if (blockAtTheBottom)
-                    {
-                        print("blockAtTheBottom: " + blockAtTheBottom.GetComponent<Block>().GetColumnIndexes()[0] + " " + blockAtTheBottom.GetComponent<Block>().color);
+                    //if (blockAtTheBottom)
+                    //{
+                    //    print("blockAtTheBottom: " + blockAtTheBottom.GetComponent<Block>().GetColumnIndexes()[0] + " " + blockAtTheBottom.GetComponent<Block>().color);
 
-                        //Insert the falling block to the row (iB should be equal to blockAtTheBottom.GetComponent<Block>().GetColumnIndex()
-                        this.sameRowBlocks[blockAtTheBottom.GetComponent<Block>().GetColumnIndexes()[0]] = blockAtTheBottom;
+                    //    //Insert the falling block to the row (iB should be equal to blockAtTheBottom.GetComponent<Block>().GetColumnIndex()
+                    //    this.sameRowBlocks[blockAtTheBottom.GetComponent<Block>().GetColumnIndexes()[0]] = blockAtTheBottom;
 
-                        string s = "";
-                        for (int iB2 = 0; iB2 < this.sameRowBlocks.Count; iB2++)
-                        {
-                            s += (this.sameRowBlocks[iB2] != null ? this.sameRowBlocks[iB2].GetComponent<Block>().color.ToString() : "___") + " ";
-                        }
-                        print("Big Total Row is: " + s);
-                    }
+                    //    string s = "";
+                    //    for (int iB2 = 0; iB2 < this.sameRowBlocks.Count; iB2++)
+                    //    {
+                    //        s += (this.sameRowBlocks[iB2] != null ? this.sameRowBlocks[iB2].GetComponent<Block>().color.ToString() : "___") + " ";
+                    //    }
+                    //    print("Big Total Row is: " + s);
+                    //}
                     
                 }
             }

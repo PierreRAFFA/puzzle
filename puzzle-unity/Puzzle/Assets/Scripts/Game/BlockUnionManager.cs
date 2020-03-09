@@ -17,7 +17,7 @@ public class BlockUnionManager : MonoBehaviour
 
     public List<List<GameObject>> FindBlocksForUnion()
     {
-        return this.DoFindBlocksForUnion(0, blockManager.GetRows().Count - 1);
+        return this.DoFindBlocksForUnion(0, blockManager.GetRows().Count - 2);
     }
 
     public List<List<GameObject>> FindBlocksForUnionFromRowRange(int rowStart, int rowEnd)
@@ -35,13 +35,15 @@ public class BlockUnionManager : MonoBehaviour
         var iR = rowStart;
         var iC = 0;
 
-        while (iR < rowEnd && iC < rows[0].Count)
+        while (iR <= rowEnd && iC < rows[0].Count)
         {
-            print("iR iC:" + iR + " " + iC);
+            print("=============iR iC:" + iR + " " + iC);
 
             GameObject currentBlock = rows[iR][iC];
             if (currentBlock != null)
             {
+                print(currentBlock.GetComponent<Block>().color);
+
                 bool isBlockAlreadySelected = selectedBlocks.IndexOf(currentBlock) > 0;
                 bool isBlockVisible = currentBlock.GetComponent<BlockPlayable>().isVisible;
 
@@ -72,12 +74,14 @@ public class BlockUnionManager : MonoBehaviour
                     if (flattenGroupRight.Count >= 4 || flattenGroupTop.Count >= 4)
                     {
                         List<Vector2> groupRightBounds = this.GetBoundsFromGroup(groupRight, iR, iC);
-                        List<Vector2> groupTopBounds = this.GetBoundsFromGroup(groupRight, iR, iC);
+                        List<Vector2> groupTopBounds = this.GetBoundsFromGroup(groupTop, iR, iC);
 
                         bool isGroupRightValid = this.IsGroupValid(flattenGroupRight, groupRightBounds);
                         bool isGroupTopValid = this.IsGroupValid(flattenGroupTop, groupTopBounds);
 
-                        
+                        print("VALID right: " + isGroupRightValid);
+                        print("VALID top: " + isGroupTopValid);
+
                         //Is any of the groups valid ?
                         if (isGroupRightValid || isGroupTopValid)
                         {
@@ -86,11 +90,6 @@ public class BlockUnionManager : MonoBehaviour
                             {
                                 flattenGroupRight = new List<GameObject>();
                                 groupRight = new List<List<GameObject>>();
-                                print("VALID right: false");
-                            }
-                            else
-                            {
-                                print("VALID right: true");
                             }
 
                             //if top not valid, just reset
@@ -98,14 +97,10 @@ public class BlockUnionManager : MonoBehaviour
                             {
                                 flattenGroupTop = new List<GameObject>();
                                 groupTop = new List<List<GameObject>>();
-                                print("VALID top: false");
-                            }
-                            else
-                            {
-                                print("VALID top: true");
                             }
 
                             print(iR + " " + iC + " found");
+
                             if (flattenGroupRight.Count >= flattenGroupTop.Count)
                             {
                                 selectedGroup = flattenGroupRight;
@@ -117,14 +112,9 @@ public class BlockUnionManager : MonoBehaviour
                                 iC += groupTop[0].Count;
                             }
 
-                            //check if the group found is already a group
-                            bool isAlreadyGroup = this.IsGroupAlreadyExist(selectedGroup);
-                            print("isAlreadyGroup: " + isAlreadyGroup);
-                            if (isAlreadyGroup == false)
-                            {
-                                print(iR + " " + iC + " " + selectedGroup[0].GetComponent<Block>().color);
-                                groups.Add(selectedGroup);
-                            }
+                           
+                            print(iR + " " + iC + " " + selectedGroup[0].GetComponent<Block>().color);
+                            groups.Add(selectedGroup);
 
                             selectedBlocks.InsertRange(selectedBlocks.Count, selectedGroup);
 
@@ -134,16 +124,6 @@ public class BlockUnionManager : MonoBehaviour
                             //otherwise go to the new column
                             iC++;
                         }
-
-                        
-
-                        
-
-
-                        
-
-
-                       
                     }
                     else
                     {
@@ -160,7 +140,6 @@ public class BlockUnionManager : MonoBehaviour
                 iC++;
             }
             
-        
             //boundaries
             if (iC > rows[0].Count - 2)
             {
@@ -194,6 +173,7 @@ public class BlockUnionManager : MonoBehaviour
                 bool sameColor = true;
                 bool isOneOfBlocksNull = false;
                 bool isOneOfBlocksAlreadySelected = false;
+                bool isBlockWithDifferentSize = false;
 
                 for (var iB = 0; iB < length; iB++)
                 {
@@ -211,6 +191,19 @@ public class BlockUnionManager : MonoBehaviour
                         {
                             isOneOfBlocksAlreadySelected = true;
                         }
+
+                        //// To manage this case
+                        //// Here, the length is 2 but the next block to check is a block2x3 which can not be added to the group
+                        ////
+                        ////  ->o o O O
+                        ////    o o O O
+                        ////        O O
+                        ////
+                        //if (currentBlock.GetComponent<Block>().GetYIndexes().Count != length)
+                        //{
+                        //    isBlockWithDifferentSize = true;
+                        //    print("isBlockWithDifferentSize Right:" + isBlockWithDifferentSize);
+                        //}
                     }
                     else
                     {
@@ -219,9 +212,10 @@ public class BlockUnionManager : MonoBehaviour
 
                 }
 
-                // console.log(sameColor);
-                // console.log(isOneOfBlocksAlreadySelected);
-                if (sameColor && isOneOfBlocksAlreadySelected == false && isOneOfBlocksNull == false)
+                print("sameColor:" + sameColor);
+                print("isOneOfBlocksAlreadySelected:" + isOneOfBlocksAlreadySelected);
+                print("isOneOfBlocksNull:" + isOneOfBlocksNull);
+                if (sameColor && isOneOfBlocksAlreadySelected == false && isOneOfBlocksNull == false)//&& isBlockWithDifferentSize == false)
                 {
                     //add each block to the correct row
                     for (var iB = 0; iB < blocks.Count; iB++)
@@ -235,7 +229,7 @@ public class BlockUnionManager : MonoBehaviour
                             group.Add(new List<GameObject>() { blocks[iB] });
                         }
                     }
-
+                    BlocksUtil.LogRows(group);
                     
                     group = this.UnionWithRight(rows, group, row, column + 1, length, selectedBlocks);
                 }
@@ -259,6 +253,7 @@ public class BlockUnionManager : MonoBehaviour
                 bool sameColor = true;
                 bool isOneOfBlocksNull = false;
                 bool isOneOfBlocksAlreadySelected = false;
+                bool isBlockWithDifferentSize = false;
 
                 for (var iB = 0; iB < length; iB++)
                 {
@@ -276,6 +271,19 @@ public class BlockUnionManager : MonoBehaviour
                         {
                             isOneOfBlocksAlreadySelected = true;
                         }
+
+                        //// To manage this case
+                        //// Here, the length is 2 but the next block to check is a block3x2 which can not be added to the group
+                        ////
+                        ////    O O O
+                        ////    O O O
+                        ////    o o
+                        ////  ->o o 
+                        //if(currentBlock.GetComponent<Block>().GetColumnIndexes().Count != length)
+                        //{
+                        //    isBlockWithDifferentSize = true;
+                        //    print("isBlockWithDifferentSize Top:" + isBlockWithDifferentSize);
+                        //}
                     }
                     else
                     {
@@ -286,7 +294,7 @@ public class BlockUnionManager : MonoBehaviour
 
                 // console.log(sameColor);
                 // console.log(isOneOfBlocksAlreadySelected);
-                if (sameColor && isOneOfBlocksAlreadySelected == false && isOneOfBlocksNull == false)
+                if (sameColor && isOneOfBlocksAlreadySelected == false && isOneOfBlocksNull == false)//&& isBlockWithDifferentSize == false)
                 {
                     group.Add(blocks);
                     group = this.UnionWithTop(rows, group, row + 1, column, length, selectedBlocks);
@@ -322,25 +330,37 @@ public class BlockUnionManager : MonoBehaviour
     {
         List<Vector2> bounds = new List<Vector2>();
 
-        int numColumns = blocks[0].Count;
-        int numRows = blocks.Count;
+        if (blocks.Count >= 2)
+        {
+            int numColumns = blocks[0].Count;
+            int numRows = blocks.Count;
 
-        print("numColumns:" + numColumns);
-        print("numRows:" + numRows);
-        BlocksUtil.LogRows(blocks);
+            print("numColumns:" + numColumns);
+            print("numRows:" + numRows);
+            BlocksUtil.LogRows(blocks);
 
-        bounds.Add(new Vector2(columnIndex * Block.BlockSize, rowIndex * Block.BlockSize));
-        bounds.Add(new Vector2((columnIndex + numColumns) * Block.BlockSize, (rowIndex + numRows) * Block.BlockSize));
+            bounds.Add(new Vector2(columnIndex * Block.BlockSize, rowIndex * Block.BlockSize));
+            bounds.Add(new Vector2((columnIndex + numColumns) * Block.BlockSize, (rowIndex + numRows) * Block.BlockSize));
 
-        print(columnIndex * Block.BlockSize + " " +  rowIndex * Block.BlockSize  + " " + (columnIndex + numColumns) * Block.BlockSize + " " + (rowIndex + numRows) * Block.BlockSize);
-
+            print(columnIndex * Block.BlockSize + " " + rowIndex * Block.BlockSize + " " + (columnIndex + numColumns) * Block.BlockSize + " " + (rowIndex + numRows) * Block.BlockSize);
+        }
+        else
+        {
+            bounds.Add(Vector2.zero);
+            bounds.Add(Vector2.zero);
+        }
         return bounds;
     }
 
-    private bool IsGroupValid(List<GameObject> blocks, List<Vector2> blockBounds)
+    private bool IsGroupValid(List<GameObject> group, List<Vector2> blockBounds)
     {
-        List<Vector2> boundsFromGeometry = BoundsUtil.GetBoundsFromGeometry(blocks);
+        //check if existing group
+        bool isAlreadyGroup = this.IsGroupAlreadyExist(group);
 
-        return BoundsUtil.AreBoundsSizeEqual(boundsFromGeometry, blockBounds, 10);
+        //check if the geometry is correct
+        List<Vector2> boundsFromGeometry = BoundsUtil.GetBoundsFromGeometry(group);
+        bool areBoundsEqual = BoundsUtil.AreBoundsSizeEqual(boundsFromGeometry, blockBounds, Block.BlockSize / 4f);
+
+        return isAlreadyGroup == false && areBoundsEqual;
     }
 }

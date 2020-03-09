@@ -50,13 +50,21 @@ public class BlockPlayable : MonoBehaviour
             }
             else
             {
-                this.GetComponent<RectTransform>().localPosition = new Vector3(
-                    this.GetComponent<RectTransform>().localPosition.x,
-                    originalLocalY + Delta,
-                    this.GetComponent<RectTransform>().localPosition.z
-                );
+                this.MoveUp();
             }
         }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void MoveUp()
+    {
+        this.GetComponent<RectTransform>().localPosition = new Vector3(
+            this.GetComponent<RectTransform>().localPosition.x,
+            this.GetComponent<RectTransform>().localPosition.y + BlockPlayable.Delta,
+            this.GetComponent<RectTransform>().localPosition.z
+        );
     }
     
 }

@@ -44,7 +44,7 @@ public class BlockManager : MonoBehaviour
         print("lastRowPositionY:" + lastRowPositionY);
         print("Block.BlockSize:" + Block.BlockSize);
         print("BlockPlayable.Delta:" + BlockPlayable.Delta);
-        float newRowPositionY = lastRowPositionY - Block.BlockSize - BlockPlayable.Delta;
+        float newRowPositionY = lastRowPositionY - Block.BlockSize;
         print("newRowPositionY:" + newRowPositionY);
 
         List<GameObject> row = new List<GameObject>();
@@ -61,6 +61,19 @@ public class BlockManager : MonoBehaviour
         this.rows.Insert(0, row);
     }
 
+    public void RemoveTopLine()
+    {
+        print("RemoveTopLine");
+        List<GameObject> row = this.rows.Last();
+        for (var iC = 0; iC < row.Count; iC++)
+        {
+            Destroy(row[iC]);
+            this.blocks.Remove(row[iC]);
+        }
+
+        this.rows.Remove(row);
+    }
+
     /// <summary>
     /// Unions blocks from the block list representing blocks whoich can be united.
     /// </summary>
@@ -68,7 +81,6 @@ public class BlockManager : MonoBehaviour
     public void UnionBlocks(List<GameObject> blocks)
     {
         print("UnionBlocks");
-        print("blocks.Count:" + blocks.Count);
         BlockColor color = blocks[0].GetComponent<Block>().color;
 
         //get Bounds
@@ -85,7 +97,6 @@ public class BlockManager : MonoBehaviour
         int widthUnits = Mathf.RoundToInt((bounds[1].x - bounds[0].x) / this.blockSize);
         int heightUnits = Mathf.RoundToInt((bounds[1].y - bounds[0].y) / this.blockSize);
         GameObject block = this.CreateBlock(bounds[1].x, bounds[0].y, widthUnits, heightUnits, false, color);
-        print("this.blocks.Count after Union:"  + this.blocks.Count);
 
         //Invalidate
         this.InvalidateRows();
@@ -103,6 +114,7 @@ public class BlockManager : MonoBehaviour
         print("=====InvalidateRows=====");
         print("this.blocks.Count:" + this.blocks.Count);
 
+        int count = 0;
         this.rows = this.blocks
             // repeat block in different rows if spread in multiple yIndexes
             .SelectMany(b => b.GetComponent<Block>().GetYIndexes().Select((yIndex, i) => new KeyValuePair<int, GameObject>(yIndex, b)))
@@ -119,35 +131,84 @@ public class BlockManager : MonoBehaviour
             })
             .Select(grp =>
             {
+                
                 List<GameObject> grpList = grp.ToList();
                 List<GameObject> result = new List<GameObject>();
                 int index = 0;
                 while (result.Count < numColumns)
                 {
-                    if (index >= grpList.Count)
+                    if (count == 12)
                     {
-                        //print("GetBlocksFromSameRowThan Add Null1");
-                        result.Add(null);
-                        index++;
+                        print("count:" + result.Count + " " + grpList.Count);
+                        if (index < grpList.Count && grpList[index] != null)
+                        {
+                            print(grpList[index].GetComponent<Block>().color + " " + String.Join(",", grpList[index].GetComponent<Block>().GetColumnIndexes().ToArray()));
+                        }
+                        
                     }
-                    else if (grpList[index].GetComponent<Block>().GetColumnIndexes().IndexOf(result.Count) >= 0) // <= to keep draggingBlock when dragging
+                    if (index < grpList.Count &&
+                        (grpList[index].GetComponent<Block>().GetColumnIndexes().IndexOf(result.Count) >= 0 || grpList[index].GetComponent<Block>().GetColumnIndexes().IndexOf(result.Count - 1) >= 0))
                     {
-                        //print("GetBlocksFromSameRowThan Element " + grpList[index].GetComponent<Block>().color);
+                        if (count == 12)
+                        {
+                            print("=>add " + grpList[index].GetComponent<Block>().color + " " + String.Join(",", grpList[index].GetComponent<Block>().GetColumnIndexes().ToArray()));
+                        }
                         result.Add(grpList[index]);
                         index++;
                     }
                     else
                     {
-                        //print("GetBlocksFromSameRowThan Add Null2");
                         result.Add(null);
+
+                        if (count == 12)
+                        {
+                            print("=>add null");
+                        }
                     }
+
+                    //if (index >= grpList.Count)
+                    //{
+                    //    //print("GetBlocksFromSameRowThan Add Null1");
+                    //    result.Add(null);
+                    //    index++;
+                    //}
+                    //else if (grpList[index].GetComponent<Block>().GetColumnIndexes().IndexOf(result.Count) >= 0) // <= to keep draggingBlock when dragging
+                    //{
+                    //    //print("GetBlocksFromSameRowThan Element " + grpList[index].GetComponent<Block>().color);
+                    //    result.Add(grpList[index]);
+                    //    index++;
+                    //}
+                    //else
+                    //{
+                    //    //print("GetBlocksFromSameRowThan Add Null2");
+                    //    result.Add(null);
+                    //}
                 }
+                count++;
                 return result;
             })
             .Select(grp => grp.ToList())
             .ToList();
 
+        print("*********");
+        //BlocksUtil.LogRows(this.blocks
+        //    // repeat block in different rows if spread in multiple yIndexes
+        //    .SelectMany(b => b.GetComponent<Block>().GetYIndexes().Select((yIndex, i) => new KeyValuePair<int, GameObject>(yIndex, b)))
+        //    .GroupBy(item => item.Key)
+        //    .OrderBy(grp => grp.Key)
+        //    .Select(grp => grp.Select(kv => kv.Value))
+        //    .Select(grp =>
+        //    {
+        //        return grp
+        //            // repeat block in different columns if spread in multiple columnIndexes
+        //            .SelectMany(b => b.GetComponent<Block>().GetColumnIndexes().Select((columnIndex, i) => new KeyValuePair<int, GameObject>(columnIndex, b)))
+        //            .OrderBy(item => item.Key)
+        //            .Select(kv => kv.Value);
+        //    })
+        //    .Select(grp => grp.ToList())
+        //    .ToList());
         BlocksUtil.LogRows(this.rows);
+        print("*********");
     }
 
     public List<List<GameObject>> GetRows()
