@@ -8,7 +8,7 @@ namespace DigitalRubyShared
     /// <summary>
     /// Word game example script, handles moving letters around
     /// </summary>
-    public class Gesture : MonoBehaviour
+    public class GestureDrag : MonoBehaviour
     {
         /// <summary>
         /// The letter prefab
@@ -44,7 +44,7 @@ namespace DigitalRubyShared
                 EventSystem.current.RaycastAll(p, raycast);
                 foreach (RaycastResult result in raycast)
                 {
-                    if (this.blockDragManager.canDrag && result.gameObject.name.IndexOf("BlockDraggable", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (result.gameObject.name.IndexOf("BlockDraggable", System.StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         
 
@@ -106,6 +106,7 @@ namespace DigitalRubyShared
 
         private void OnEnable()
         {
+
             canvas = GetComponent<Canvas>();
             letterMoveGesture = new PanGestureRecognizer();
             letterMoveGesture.ThresholdUnits = 0.0f; // start right away

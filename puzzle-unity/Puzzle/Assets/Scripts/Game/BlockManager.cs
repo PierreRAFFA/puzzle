@@ -74,6 +74,14 @@ public class BlockManager : MonoBehaviour
         this.rows.Remove(row);
     }
 
+    public void RemoveBlock(GameObject block)
+    {
+        this.blocks.Remove(block);
+        Destroy(block);
+
+        this.InvalidateRows();
+    }
+
     /// <summary>
     /// Unions blocks from the block list representing blocks whoich can be united.
     /// </summary>
@@ -222,7 +230,12 @@ public class BlockManager : MonoBehaviour
 
     public int GetFirstRowVisibleIndex()
     {
-        return this.rows.FindIndex(item => item.Count > 0 && item[0].GetComponent<BlockPlayable>().isVisible);
+        return this.rows.FindIndex(row => row.Count > 0 && row[0].GetComponent<BlockPlayable>().isVisible);
+    }
+
+    public IEnumerable<List<GameObject>> GetRowsFromBlock(GameObject block)
+    {
+        return this.rows.Where(row => row.IndexOf(block) >= 0);
     }
 
     // Update is called once per frame

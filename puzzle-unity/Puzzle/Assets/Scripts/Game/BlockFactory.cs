@@ -30,7 +30,7 @@ public class BlockFactory : MonoBehaviour
         float factor = 1f; // 1.26f
 
         GameObject block = Instantiate(Resources.Load<GameObject>("Prefabs/Block2x2"), new Vector3(1, 1, 0), Quaternion.identity) as GameObject;
-        block.name = draggable ? "BlockDraggable" : "BlockNotDraggable";
+        block.name = draggable ? "BlockDraggable" : "BlockDoubleTappable";
         block.transform.SetParent(container, false);
 
         //apply position and size

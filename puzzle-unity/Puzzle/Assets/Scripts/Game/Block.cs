@@ -70,7 +70,7 @@ public class Block : MonoBehaviour
         ht.Add("delay", 0.0f);
         ht.Add("isLocal", true);
         //ht.Add("onupdate", "OnInertiaUpdate");
-        ht.Add("easetype", iTween.EaseType.easeOutQuint);
+        ht.Add("easetype", iTween.EaseType.easeOutExpo);
         iTween.MoveTo(this.gameObject, ht);
     }
     ////////////////////////////////////////////////////////////////////////////////////

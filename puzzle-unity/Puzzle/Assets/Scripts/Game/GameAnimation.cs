@@ -39,7 +39,6 @@ public class GameAnimation : MonoBehaviour
 
                 //check for unions
                 int index = this.blockManager.GetFirstRowVisibleIndex();
-                print(this.blockManager.GetRows()[index - 1][0].transform.position.y);
                 blockUnionManager.FindBlocksForUnionFromRowRange(index, index);
 
 
